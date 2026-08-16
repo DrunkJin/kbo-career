@@ -330,8 +330,12 @@ export function reducer(s: GameState, action: Action): GameState {
           label: o.label,
         },
         teamTrust: o.kind === "잔류" ? Math.max(p.teamTrust, 55) : 45,
-        morale: clamp(p.morale + (o.kind === "강등" ? -14 : o.kind === "해외진출" ? 14 : 4), 5, 100),
-        serviceKBO: o.league === "KBO" ? p.serviceKBO : o.kind === "해외진출" ? 0 : p.serviceKBO,
+        morale: clamp(
+          p.morale +
+            (o.kind === "강등" ? -14 : o.kind === "해외진출" ? 14 : o.kind === "복귀" ? 8 : 4),
+          5,
+          100,
+        ),
       };
       let next: GameState = {
         ...s,

@@ -514,17 +514,14 @@ export function buildOffers(s: PlayerState): Offer[] {
     offers.push(mk(team, up, "콜업", 3, 1, `${LEAGUES[up].short} 승격`, `드디어 ${LEAGUES[up].label} 무대입니다.`));
   }
 
-  // 3) 해외 진출 (포스팅/FA)
-  if (cur === "KBO" && s.ovr >= 74 && lastWar >= 3.5) {
-    if (s.serviceKBO >= 7 || rand() < 0.5) {
-      offers.push(mk(pick(NPB_TEAMS), "NPB", "해외진출", 3, 1.05, "포스팅 · NPB 진출", "일본 구단이 포스팅 응찰에 나섰습니다."));
-    }
-    if (s.ovr >= 78 && rand() < 0.55) {
-      offers.push(mk(pick(MLB_TEAMS), "MLB", "해외진출", 4, 1.1, "포스팅 · MLB 진출", "메이저리그 구단의 정식 오퍼입니다. 인생이 바뀝니다."));
-    }
-  }
-  if (cur === "NPB" && s.ovr >= 78 && lastWar >= 4) {
-    offers.push(mk(pick(MLB_TEAMS), "MLB", "해외진출", 4, 1.15, "포스팅 · MLB 진출", "일본에서의 성공이 메이저의 문을 열었습니다."));
+  // 3) 리그 간 이동 — 올라가는 길과 돌아오는 길 모두 열려 있습니다
+  for (const route of CROSS_ROUTES) {
+    if (route.from !== cur) continue;
+    if (!route.when({ s, edge, lastWar })) continue;
+    if (route.chance !== undefined && rand() >= route.chance) continue;
+    const teams = teamsOf(route.to).filter((x) => x.name !== currentTeam?.name);
+    const team = pick(teams.length ? teams : teamsOf(route.to));
+    offers.push(mk(team, route.to, route.kind, route.years, route.mult, route.label, route.note));
   }
 
   // 4) 동급 리그 경쟁 구단
@@ -543,17 +540,119 @@ export function buildOffers(s: PlayerState): Offer[] {
     offers.push(mk(team, down, "강등", 1, 0.5, `${LEAGUES[down].short} 재조정`, "지금 수준으로는 이 무대가 버겁습니다."));
   }
 
-  // 6) 한국 복귀
-  if ((cur === "AAA" || cur === "NPB_F") && s.age >= 28) {
-    offers.push(mk(pick(KBO_TEAMS), "KBO", "복귀", 3, 1.05, "KBO 유턴 계약", "한국 구단이 즉시 전력으로 부릅니다."));
-  }
-
   if (!offers.length) {
     const team = currentTeam ?? pick(teamsOf(cur));
     offers.push(mk(team, cur, "잔류", 1, 0.6, "단년 최소 계약", "마지막 기회일지도 모릅니다."));
   }
-  return offers.slice(0, 4);
+
+  // 리그를 옮기는 선택지가 단순 이적에 밀려 잘리지 않도록 우선순위를 둡니다
+  const rank = (o: Offer) =>
+    o.kind === "잔류" ? 0 : o.league !== cur ? 1 : o.kind === "강등" ? 3 : 2;
+  return [...offers].sort((a, b) => rank(a) - rank(b)).slice(0, 5);
 }
+
+/* ─────────────────── 리그 간 이동 경로 ─────────────────── */
+
+type RouteCtx = { s: PlayerState; edge: number; lastWar: number };
+type CrossRoute = {
+  from: LeagueId;
+  to: LeagueId;
+  kind: Offer["kind"];
+  label: string;
+  note: string;
+  years: number;
+  /** 시장가 배수 */
+  mult: number;
+  /** 조건을 만족해도 이 확률로만 등장 */
+  chance?: number;
+  when: (c: RouteCtx) => boolean;
+};
+
+/**
+ * 올라가는 길(포스팅)과 돌아오는 길(유턴·복귀)을 모두 정의합니다.
+ * KBO ↔ NPB ↔ MLB ↔ MiLB 사이를 나이·성적·리그 적응도에 따라 오갈 수 있습니다.
+ */
+const CROSS_ROUTES: CrossRoute[] = [
+  /* ── KBO 에서 나가는 길 ── */
+  {
+    from: "KBO", to: "NPB", kind: "해외진출", years: 3, mult: 1.05, chance: 0.75,
+    label: "포스팅 · NPB 진출",
+    note: "일본 구단이 포스팅 응찰에 나섰습니다.",
+    when: ({ s, lastWar }) => s.ovr >= 74 && lastWar >= 3.5 && (s.serviceKBO >= 7 || rand() < 0.5),
+  },
+  {
+    from: "KBO", to: "MLB", kind: "해외진출", years: 4, mult: 1.1, chance: 0.55,
+    label: "포스팅 · MLB 진출",
+    note: "메이저리그 구단의 정식 오퍼입니다. 인생이 바뀝니다.",
+    when: ({ s, lastWar }) => s.ovr >= 78 && lastWar >= 3.5,
+  },
+  {
+    from: "KBO", to: "AAA", kind: "해외진출", years: 2, mult: 0.9, chance: 0.4,
+    label: "스플릿 계약 · MLB 도전",
+    note: "메이저 보장은 없습니다. 마이너에서 다시 증명해야 합니다.",
+    when: ({ s, lastWar }) => s.ovr >= 71 && s.age <= 28 && lastWar >= 2.5,
+  },
+
+  /* ── NPB 에서 ── */
+  {
+    from: "NPB", to: "MLB", kind: "해외진출", years: 4, mult: 1.15, chance: 0.7,
+    label: "포스팅 · MLB 진출",
+    note: "일본에서의 성공이 메이저의 문을 열었습니다.",
+    when: ({ s, lastWar }) => s.ovr >= 78 && lastWar >= 4,
+  },
+  {
+    from: "NPB", to: "KBO", kind: "복귀", years: 3, mult: 1.25, chance: 0.7,
+    label: "KBO 복귀 계약",
+    note: "한국 구단이 즉시 전력으로 부릅니다. 익숙한 리그로 돌아갑니다.",
+    when: ({ s, edge, lastWar }) => s.age >= 28 && (edge < 1 || lastWar < 3),
+  },
+
+  /* ── MLB 에서 돌아오는 길 ── */
+  {
+    from: "MLB", to: "KBO", kind: "복귀", years: 4, mult: 1.6, chance: 0.8,
+    label: "KBO 유턴 · 대형 계약",
+    note: "메이저 경력을 앞세운 최대어입니다. 한국 구단들이 총력전을 폅니다.",
+    when: ({ s, edge, lastWar }) => s.age >= 28 && (edge < 2 || lastWar < 2.5),
+  },
+  {
+    from: "MLB", to: "NPB", kind: "이적", years: 3, mult: 1.3, chance: 0.6,
+    label: "NPB 이적 계약",
+    note: "일본 구단이 메이저 출신 즉시 전력으로 영입을 제안했습니다.",
+    when: ({ s, edge }) => s.age >= 27 && edge < 3,
+  },
+
+  /* ── 마이너에서 ── */
+  {
+    from: "AAA", to: "KBO", kind: "복귀", years: 3, mult: 1.15,
+    label: "KBO 유턴 계약",
+    note: "한국 구단이 즉시 전력으로 부릅니다.",
+    when: ({ s }) => s.age >= 26,
+  },
+  {
+    from: "AAA", to: "NPB", kind: "이적", years: 3, mult: 1.1, chance: 0.6,
+    label: "NPB 이적 계약",
+    note: "메이저 콜업을 기다리느니, 일본에서 주전으로 뛰는 길입니다.",
+    when: ({ s }) => s.age >= 25 && s.ovr >= 66,
+  },
+  {
+    from: "AA", to: "KBO", kind: "복귀", years: 2, mult: 1, chance: 0.5,
+    label: "KBO 계약",
+    note: "마이너 생활을 접고 한국 무대에서 시작합니다.",
+    when: ({ s }) => s.age >= 26 && s.ovr >= 62,
+  },
+  {
+    from: "NPB_F", to: "KBO", kind: "복귀", years: 3, mult: 1.05,
+    label: "KBO 유턴 계약",
+    note: "2군 생활을 접고 한국에서 기회를 잡습니다.",
+    when: ({ s }) => s.age >= 26,
+  },
+  {
+    from: "KBO_F", to: "NPB_F", kind: "이적", years: 3, mult: 1.1, chance: 0.25,
+    label: "일본 육성선수 계약",
+    note: "퓨처스에서 눈에 띈 당신에게 일본 구단이 손을 내밀었습니다.",
+    when: ({ s }) => s.age <= 25 && s.ovr >= 58,
+  },
+];
 
 function predictRole(s: PlayerState, league: LeagueId): Role {
   const edge = s.ovr - LEAGUES[league].level;

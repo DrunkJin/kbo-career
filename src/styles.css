@@ -1061,6 +1061,10 @@ table.rec .team-cell {
   background: var(--gold);
   color: #200a04;
 }
+.offer .kind.복귀 {
+  background: var(--green);
+  color: #06210f;
+}
 .offer .kind.강등 {
   background: var(--red);
   color: #fff;
