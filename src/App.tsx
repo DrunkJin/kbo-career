@@ -1,60 +1,99 @@
 import { useMemo, useState } from "react";
 
-type League = "KBO 퓨처스" | "KBO" | "NPB 2군" | "NPB" | "AAA" | "MLB";
 type Position = "투수" | "포수" | "내야수" | "외야수";
-type Origin = "KBO 드래프트" | "NPB 드래프트" | "MLB 국제계약" | "특급 유망주";
+type League = "KBO 퓨처스" | "KBO" | "NPB 2군" | "NPB" | "Double-A" | "Triple-A" | "MLB";
+type Club = { name: string; league: League; overall: number; image?: string; contract: string };
 
-const teams = ["LG 트윈스", "한화 이글스", "삼성 라이온즈", "두산 베어스", "SSG 랜더스", "롯데 자이언츠", "KT 위즈", "KIA 타이거즈", "NC 다이노스", "키움 히어로즈"];
-const journey: { league: League; level: number; title: string; note: string }[] = [
-  { league: "KBO 퓨처스", level: 1, title: "퓨처스리그", note: "프로의 첫 관문" },
-  { league: "KBO", level: 2, title: "KBO 1군", note: "10개 구단 최정상 무대" },
-  { league: "NPB 2군", level: 3, title: "일본 팜", note: "이스트·웨스턴 리그" },
-  { league: "NPB", level: 4, title: "NPB 1군", note: "센트럴·퍼시픽 리그" },
-  { league: "AAA", level: 5, title: "Triple-A", note: "메이저리그 직전" },
-  { league: "MLB", level: 6, title: "Major League", note: "세계 최고 무대" },
+const kbo = [
+  ["LG 트윈스", "lg"], ["한화 이글스", "hanhwa"], ["삼성 라이온즈", "samsung"], ["두산 베어스", "doosan"], ["SSG 랜더스", "ssg"],
+  ["롯데 자이언츠", "lotte"], ["KT 위즈", "kt"], ["KIA 타이거즈", "kia"], ["NC 다이노스", "nc"], ["키움 히어로즈", "kiwoom"],
 ];
+const names = ["김도윤", "이현우", "박준서", "최민재", "정시우", "강우진"];
+const positions: Position[] = ["투수", "포수", "내야수", "외야수"];
+const japanese = ["요미우리 자이언츠", "한신 타이거스", "후쿠오카 소프트뱅크 호크스", "오릭스 버팔로스"];
+const american = ["Los Angeles Dodgers", "Seattle Mariners", "San Diego Padres", "New York Yankees"];
 
-function Rating({ label, value }: { label: string; value: number }) {
-  return <div className="rating"><div><span>{label}</span><b>{value}</b></div><i><em style={{ width: `${value}%` }} /></i></div>;
+const teamImage = (name: string) => {
+  const found = kbo.find(([club]) => club === name);
+  return found ? `${import.meta.env.BASE_URL}img/${found[1]}.jpg` : undefined;
+};
+const random = <T,>(values: T[]) => values[Math.floor(Math.random() * values.length)];
+
+function TeamMuse({ club, small = false }: { club: Club; small?: boolean }) {
+  if (!club.image) return <div className={`team-fallback ${small ? "small" : ""}`}>{club.name.slice(0, 2).toUpperCase()}</div>;
+  return <img className={`team-muse ${small ? "small" : ""}`} src={club.image} alt={`${club.name} 구단 모에화`} />;
 }
+
+function getStart(): Club {
+  const roll = Math.random();
+  if (roll < .60) { const [name] = random(kbo); return { name, league: "KBO 퓨처스", overall: 54 + Math.floor(Math.random() * 9), image: teamImage(name), contract: "신인 계약 · ₩ 30M" }; }
+  if (roll < .82) return { name: random(japanese), league: "NPB 2군", overall: 60 + Math.floor(Math.random() * 8), contract: "육성선수 계약 · ¥ 4.4M" };
+  if (roll < .98) return { name: random(american), league: "Double-A", overall: 63 + Math.floor(Math.random() * 9), contract: "International Signing · $180K" };
+  return { name: random(american), league: "MLB", overall: 76 + Math.floor(Math.random() * 6), contract: "MLB 데뷔 계약 · $740K" };
+}
+
+function ratingFor(overall: number) { return { contact: Math.min(99, overall + 5), power: Math.max(35, overall - 3), defense: Math.min(99, overall + 2), speed: Math.min(99, overall + 7) }; }
 
 export function App() {
-  const [created, setCreated] = useState(false);
+  const [started, setStarted] = useState(false);
   const [name, setName] = useState("김 커리어");
   const [position, setPosition] = useState<Position>("내야수");
-  const [team, setTeam] = useState("LG 트윈스");
-  const [origin, setOrigin] = useState<Origin>("KBO 드래프트");
-  const [league, setLeague] = useState<League>("KBO 퓨처스");
-  const [week, setWeek] = useState(2);
-  const [overall, setOverall] = useState(58);
-  const [form, setForm] = useState(76);
-  const [tab, setTab] = useState<"overview" | "market" | "record">("overview");
-  const [notice, setNotice] = useState("스프링캠프 평가전에서 좋은 인상을 남겼습니다.");
-  const [log, setLog] = useState(["2월 17일 · LG 트윈스와 육성선수 계약", "2월 24일 · 이천 챔피언스파크 스프링캠프 합류"]);
-  const [offer, setOffer] = useState(false);
-  const stats = useMemo(() => ({ games: Math.max(0, (week - 2) * 5), avg: week < 4 ? ".000" : `.${String(211 + week * 7)}`, hr: Math.max(0, week - 5), rbi: Math.max(0, (week - 3) * 3) }), [week]);
-  const simulate = () => {
-    const next = week + 1;
-    const boost = Math.random() > .45 ? 1 : 0;
-    setWeek(next); setOverall(v => Math.min(99, v + boost)); setForm(Math.max(48, Math.min(99, form + (Math.random() > .5 ? 7 : -5))));
-    if (next === 5) { setNotice("퓨처스리그 개막! 2번 타자, 유격수로 선발 출전합니다."); setLog(l => [...l, "3월 29일 · 퓨처스리그 개막전 선발 명단 포함"]); }
-    else if (next === 8) { setOffer(true); setNotice("구단이 정식선수 전환과 1군 스프링 로스터 합류를 제안했습니다."); setLog(l => [...l, "4월 19일 · 정식선수 전환 제안 도착"]); }
-    else { setNotice(`시즌 ${next}주차를 마쳤습니다. 코칭스태프 평점이 ${boost ? "상승" : "유지"}했습니다.`); setLog(l => [...l, `2026 시즌 ${next}주차 · 훈련과 경기 일정 완료`]); }
+  const [club, setClub] = useState<Club>(() => getStart());
+  const [year, setYear] = useState(2026);
+  const [age, setAge] = useState(19);
+  const [money, setMoney] = useState(30);
+  const [fame, setFame] = useState(18);
+  const [health, setHealth] = useState(92);
+  const [season, setSeason] = useState({ games: 0, avg: ".000", hr: 0, rbi: 0, war: 0 });
+  const [history, setHistory] = useState<string[]>([]);
+  const [headline, setHeadline] = useState("스카우트 리포트가 도착했습니다.");
+  const [offer, setOffer] = useState<Club | null>(null);
+  const [tab, setTab] = useState<"career" | "market" | "records">("career");
+  const ratings = useMemo(() => ratingFor(club.overall), [club.overall]);
+
+  const begin = () => {
+    const destiny = getStart();
+    setClub(destiny); setStarted(true); setYear(2026); setAge(19); setMoney(destiny.league === "MLB" ? 740 : 30); setFame(destiny.overall - 38); setHealth(92);
+    setSeason({ games: 0, avg: ".000", hr: 0, rbi: 0, war: 0 });
+    setHeadline(`${destiny.name}의 ${destiny.league} 오퍼를 받았습니다. 이 커리어는 오직 한 번뿐입니다.`);
+    setHistory([`2026 · ${destiny.name} 입단 (${destiny.league})`]);
   };
-  const promote = () => { setOffer(false); setLeague("KBO"); setOverall(v => v + 2); setNotice("축하합니다! 1군 엔트리에 등록되었습니다. 이제 잠실에서 증명하세요."); setLog(l => [...l, "4월 20일 · KBO 1군 콜업"]); };
-  const startCareer = () => {
-    const routes: Record<Origin, {league: League; team: string; overall: number; message: string}> = {
-      "KBO 드래프트": { league: "KBO 퓨처스", team, overall: 58, message: "신인 계약 후 퓨처스리그 캠프에 합류했습니다." },
-      "NPB 드래프트": { league: "NPB 2군", team: "요미우리 자이언츠", overall: 62, message: "요미우리의 지명을 받아 일본 팜리그에서 출발합니다." },
-      "MLB 국제계약": { league: "AAA", team: "Los Angeles Dodgers", overall: 65, message: "국제계약을 맺었습니다. 스프링캠프 활약에 따라 마이너리그 배정이 결정됩니다." },
-      "특급 유망주": { league: "MLB", team: "Seattle Mariners", overall: 76, message: "세기의 유망주로 메이저리그 개막 로스터에 합류했습니다." },
-    };
-    const route = routes[origin]; setLeague(route.league); setTeam(route.team); setOverall(route.overall); setNotice(route.message); setCreated(true);
+  const advanceSeason = () => {
+    const talent = club.overall + Math.floor(Math.random() * 18) - 7;
+    const games = club.league === "MLB" || club.league === "KBO" || club.league === "NPB" ? 72 + Math.floor(Math.random() * 70) : 55 + Math.floor(Math.random() * 62);
+    const avg = Math.max(.198, Math.min(.356, .196 + talent / 600 + (Math.random() * .05)));
+    const hr = position === "투수" ? Math.floor(Math.random() * 3) : Math.max(0, Math.round((talent - 45) / 4 + Math.random() * 10));
+    const rbi = Math.max(0, Math.floor(games * (.24 + talent / 500)));
+    const war = Number(Math.max(-.5, (talent - 52) / 10 + Math.random() * 1.8 - .6).toFixed(1));
+    const growth = talent >= 70 ? 3 : talent >= 59 ? 2 : 1;
+    const nextOvr = Math.min(99, club.overall + growth);
+    const injury = Math.random() < .12;
+    const nextHealth = injury ? Math.max(45, health - 28) : Math.min(100, health + 4);
+    const line = `${year} · ${club.league} ${games}G / ${avg.toFixed(3).replace("0.", ".")} / ${hr}HR / ${rbi}RBI / ${war} WAR`;
+    setSeason({ games, avg: avg.toFixed(3).replace("0.", "."), hr, rbi, war });
+    setClub(c => ({ ...c, overall: nextOvr })); setMoney(m => m + Math.round((club.league === "MLB" ? 740 : club.league.includes("NPB") ? 90 : 45) * (1 + war / 8))); setFame(f => Math.min(100, f + Math.round(war * 4 + growth))); setHealth(nextHealth);
+    setHistory(h => [...h, line]); setYear(y => y + 1); setAge(a => a + 1);
+    if (injury) setHeadline(`${year} 시즌 후반, 부상 경보가 울렸습니다. 재활과 회복 관리가 다음 시즌의 핵심입니다.`);
+    else setHeadline(`${year} 시즌 종료. ${war >= 3 ? "리그를 놀라게 한 활약입니다. 이적 제안이 쌓이고 있습니다." : "다음 시즌의 선택이 당신의 격을 바꿉니다."}`);
+    if (war >= 2 || nextOvr >= 68) setOffer(createOffer(club, nextOvr));
   };
-  if (!created) return <main className="setup"><section className="setup-copy"><div className="eyebrow">BASEBALL CAREER SIMULATOR</div><h1>당신의 이름으로<br/><strong>야구의 시간을</strong> 만드세요.</h1><p>어디에서 커리어를 시작할지는 당신의 선택입니다. KBO, NPB, 그리고 미국의 모든 레벨에서 기회를 잡으세요.</p><div className="worlds"><span>KBO</span><i>↔</i><span>NPB</span><i>↔</i><span>MLB</span></div></section><section className="creator"><div className="card-title"><span>01</span><div><small>NEW CAREER</small><h2>선수 만들기</h2></div></div><label>선수 이름<input value={name} onChange={e => setName(e.target.value)} /></label><label>주 포지션<div className="choices">{(["투수","포수","내야수","외야수"] as Position[]).map(p => <button className={position === p ? "selected" : ""} onClick={() => setPosition(p)} key={p}>{p}</button>)}</div></label><label>커리어 시작 경로<div className="route-choices">{(["KBO 드래프트","NPB 드래프트","MLB 국제계약","특급 유망주"] as Origin[]).map(p => <button className={origin === p ? "selected" : ""} onClick={() => setOrigin(p)} key={p}><b>{p}</b><small>{p === "KBO 드래프트" ? "퓨처스리그에서 경쟁" : p === "NPB 드래프트" ? "일본 팜리그에서 시작" : p === "MLB 국제계약" ? "미국 마이너리그 진입" : "MLB 즉시 데뷔 · 최고 난이도"}</small></button>)}</div></label>{origin === "KBO 드래프트" && <label>입단 구단<select value={team} onChange={e => setTeam(e.target.value)}>{teams.map(t => <option key={t}>{t}</option>)}</select></label>}<button className="start" onClick={startCareer}>나의 커리어 시작하기 <span>→</span></button><p className="tiny">2026 시즌 · 경로별 계약과 난이도가 다릅니다</p></section></main>;
-  const currentLevel = journey.find(j => j.league === league)!.level;
-  return <main className="game"><header><a className="brand"><i>BC</i> BASELINE <small>CAREER</small></a><nav>{([['overview','커리어'],['market','이적 시장'],['record','기록실']] as const).map(([id,label]) => <button onClick={() => setTab(id)} className={tab === id ? "active" : ""} key={id}>{label}</button>)}</nav><div className="season">2026 <span>SEASON</span><b>WEEK {week}</b></div></header><div className="hero"><div><div className="eyebrow">{league.toUpperCase()} · {team}</div><h1>{name} <span>#{position === "투수" ? "18" : "7"}</span></h1><p>19세 · 대한민국 · {position} · 우투우타</p></div><div className="contract"><small>CURRENT CONTRACT</small><b>육성선수</b><span>₩ 30,000,000 / year</span></div></div><div className="content"><aside><div className="portrait">{name.slice(0,1)}<span>OVR <b>{overall}</b></span></div><div className="badges"><span>잠재력 <b>A</b></span><span>컨디션 <b>{form}</b></span></div><div className="ratings"><Rating label="컨택" value={overall + 8}/><Rating label="파워" value={overall - 5}/><Rating label="수비" value={overall + 3}/><Rating label="주력" value={overall + 10}/></div><button className="training" onClick={() => {setOverall(v => Math.min(99,v+1));setNotice("집중 훈련을 마쳤습니다. 전체 능력치가 1 상승했습니다.")}}>✦ 집중 훈련</button></aside><section className="mainpanel">{tab === "overview" && <><div className="headline"><div><span className="status">● ACTIVE</span><h2>다음 무대가 당신을 기다립니다.</h2><p>{notice}</p></div><button className="advance" onClick={simulate}>1주 진행 <span>→</span></button></div><div className="match"><div><small>NEXT GAME</small><h3>{week < 5 ? "스프링캠프 평가전" : "퓨처스리그 정규시즌"}</h3><p>이천 챔피언스파크 · 13:00</p></div><div className="versus"><b>LG</b><span>VS</span><b className="opponent">두산</b></div><button>라인업 보기</button></div><h3 className="section-title">ROAD TO THE SHOW <span>6개 리그 · 9개 경쟁 레벨</span></h3><div className="road">{journey.map(j => <div className={`node ${j.level < currentLevel ? "done" : j.level === currentLevel ? "now" : ""}`} key={j.league}><i>{j.level < currentLevel ? "✓" : j.level}</i><b>{j.title}</b><small>{j.note}</small></div>)}</div><div className="bottom-grid"><div className="timeline"><h3>커리어 타임라인</h3>{log.slice(-3).reverse().map(x => <p key={x}><i/> {x}</p>)}</div><div className="scout"><small>SCOUT REPORT</small><h3>“공수 밸런스가 탁월한<br/>상위 레벨 자원”</h3><p>1군 콜업 예상: 2026년 5월</p></div></div></>}{tab === "market" && <Market league={league}/>} {tab === "record" && <Records stats={stats} league={league}/>}</section></div>{offer && <div className="modal"><div><span className="status">OFFER RECEIVED</span><h2>1군 콜업 제안</h2><p>LG 트윈스가 정식선수 전환 및 1군 엔트리 등록을 제안합니다. 수락 시 KBO 1군 로스터 경쟁이 시작됩니다.</p><button className="start" onClick={promote}>제안 수락하기 →</button><button className="plain" onClick={() => setOffer(false)}>퓨처스에 남기</button></div></div>}</main>;
+  const acceptOffer = () => { if (!offer) return; setHistory(h => [...h, `${year} 오프시즌 · ${offer.name} 이적 (${offer.league})`]); setHeadline(`${offer.name} 유니폼을 입었습니다. 새로운 경쟁이 시작됩니다.`); setMoney(m => m + 80); setClub(offer); setOffer(null); };
+  const train = () => { setClub(c => ({ ...c, overall: Math.min(99, c.overall + 1) })); setHealth(h => Math.max(50, h - 7)); setHeadline("오프시즌 개인 훈련을 마쳤습니다. OVR +1, 체력 -7."); };
+
+  if (!started) return <main className="setup destiny"><section className="setup-copy"><div className="eyebrow">BASEBALL CAREER SIMULATOR · 2026</div><h1>선택하지 마세요.<br/><strong>운명이 지명합니다.</strong></h1><p>드래프트, 국제계약, 육성선수, 혹은 기적 같은 MLB 데뷔. 시작점은 랜덤이지만, 전설이 되는 길은 당신의 성적으로 결정됩니다.</p><div className="odds"><span>KBO 60%</span><span>NPB 22%</span><span>MINORS 16%</span><span>MLB 2%</span></div></section><section className="creator"><div className="card-title"><span>01</span><div><small>DESTINY DRAFT</small><h2>당신은 누구입니까?</h2></div></div><label>선수 이름<input value={name} onChange={e => setName(e.target.value)} /></label><label>주 포지션<div className="choices">{positions.map(p => <button type="button" className={position === p ? "selected" : ""} onClick={() => setPosition(p)} key={p}>{p}</button>)}</div></label><div className="random-ticket"><small>SCOUTING LOTTERY</small><b>시작 구단 · 리그 · 계약이 무작위로 결정됩니다.</b><span>희귀한 MLB 즉시 데뷔는 2% 확률입니다.</span></div><button className="start" onClick={begin}>운명적인 첫 오퍼 열기 <span>→</span></button><p className="tiny">한 번 시작한 커리어는 되돌릴 수 없습니다</p></section></main>;
+
+  return <main className="game"><header><a className="brand"><i>BC</i> BASELINE <small>CAREER</small></a><nav>{([['career','커리어'],['market','이적 시장'],['records','기록실']] as const).map(([id,label]) => <button onClick={() => setTab(id)} className={tab === id ? "active" : ""} key={id}>{label}</button>)}</nav><div className="season">{year} <span>OFFSEASON</span><b>AGE {age}</b></div></header><div className="hero"><div><div className="eyebrow">{club.league} · {club.name}</div><h1>{name} <span>#{position === "투수" ? "18" : "7"}</span></h1><p>{age}세 · 대한민국 · {position} · {club.contract}</p></div><div className="contract"><small>CAREER EARNINGS</small><b>₩ {money.toLocaleString()}M</b><span>명성 {fame} · 체력 {health}</span></div></div><div className="content"><aside><div className="team-card"><TeamMuse club={club}/><div className="team-overlay"><small>CURRENT CLUB</small><b>{club.name}</b></div></div><div className="badges"><span>잠재력 <b>A</b></span><span>OVR <b>{club.overall}</b></span></div><div className="ratings"><Metric label="컨택" value={ratings.contact}/><Metric label="파워" value={ratings.power}/><Metric label="수비" value={ratings.defense}/><Metric label="주력" value={ratings.speed}/></div><button className="training" onClick={train}>✦ 오프시즌 집중 훈련</button></aside><section className="mainpanel">{tab === "career" && <><div className="headline"><div><span className="status">● {offer ? "DECISION REQUIRED" : "OFFSEASON"}</span><h2>{offer ? "당신의 다음 유니폼을 결정하세요." : "한 시즌이 한 번의 이야기입니다."}</h2><p>{headline}</p></div><button className="advance" onClick={advanceSeason}> {year} 시즌 진행 <span>→</span></button></div><div className="season-recap"><div><small>LAST SEASON</small><b>{season.games ? `${year - 1} SEASON` : "ROOKIE YEAR"}</b><span>{season.games ? `${season.games}G · ${season.avg} · ${season.hr}HR · ${season.rbi}RBI · ${season.war} WAR` : "첫 시즌의 기록은 아직 비어 있습니다."}</span></div><div className="season-goal"><small>NEXT MILESTONE</small><b>{club.overall < 65 ? "로스터 생존" : club.overall < 74 ? "상위 리그 콜업" : "올스타 / 해외 진출"}</b></div></div><h3 className="section-title">CAREER LADDER <span>한 번의 성적이 다음 리그를 엽니다</span></h3><div className="ladder"><Ladder title="KBO" sub="퓨처스 → 1군" active={club.league.includes("KBO")}/><Ladder title="NPB" sub="팜 → 1군" active={club.league.includes("NPB")}/><Ladder title="MLB" sub="AA → AAA → MLB" active={club.league.includes("A") || club.league === "MLB"}/></div><div className="bottom-grid"><div className="timeline"><h3>커리어 연대기</h3>{history.slice(-4).reverse().map(x => <p key={x}><i/> {x}</p>)}</div><div className="scout"><small>FRONT OFFICE NOTE</small><h3>{fame > 60 ? "“구단의 미래를 바꿀 얼굴”" : "“아직은 증명할 시간이 필요하다”"}</h3><p>이적 시장은 시즌 종료 후 성적과 명성에 반응합니다.</p></div></div></>}{tab === "market" && <Market offer={offer} accept={acceptOffer} current={club}/>} {tab === "records" && <Records history={history} />}</section></div>{offer && <div className="modal"><div className="offer-modal"><span className="status">CONTRACT OFFER</span><TeamMuse club={offer}/><h2>{offer.name}</h2><p>{offer.league} · {offer.contract}</p><p>당신의 성적을 지켜본 구단이 정식 제안을 보냈습니다. 지금 이적하면 새로운 리그와 로스터 경쟁이 시작됩니다.</p><button className="start" onClick={acceptOffer}>계약서에 서명하기 →</button><button className="plain" onClick={() => setOffer(null)}>현재 팀에 남기</button></div></div>}</main>;
 }
 
-function Market({ league }: { league: League }) { return <div className="tabpage"><div className="eyebrow">GLOBAL PLAYER MARKET</div><h2>이적 시장</h2><p>당신의 명성과 성적에 따라 해외 구단의 관심이 달라집니다.</p><div className="market-grid"><article><span>INTEREST</span><b>후쿠오카 소프트뱅크 호크스</b><small>NPB · Pacific League</small><p>스카우팅 단계 · KBO 1군 3년 차 이후 포스팅 검토</p></article><article><span>PATHWAY</span><b>MLB 국제계약</b><small>Rookie → A → AA → AAA</small><p>해외 스카우트의 관심을 받으려면 국제대회 또는 리그 MVP가 필요합니다.</p></article><article className="locked"><span>UNLOCK AT NPB</span><b>FA 권리</b><small>서비스 타임을 쌓으세요</small><p>현재 리그: {league}</p></article></div></div> }
-function Records({ stats, league }: { stats: {games:number;avg:string;hr:number;rbi:number}; league: League }) { return <div className="tabpage"><div className="eyebrow">CAREER DATABASE</div><h2>통산 기록</h2><div className="statline"><div><b>{stats.games}</b><span>경기</span></div><div><b>{stats.avg}</b><span>타율</span></div><div><b>{stats.hr}</b><span>홈런</span></div><div><b>{stats.rbi}</b><span>타점</span></div></div><div className="record-row"><span>2026</span><b>{league}</b><span>{stats.games}G · {stats.avg} · {stats.hr} HR · {stats.rbi} RBI</span></div><p className="record-note">리그별 기록과 통산 기록은 커리어 종료까지 자동 보존됩니다.</p></div> }
+function createOffer(current: Club, overall: number): Club {
+  if (current.league === "KBO 퓨처스") { const [name] = random(kbo); return { name, league: "KBO", overall, image: teamImage(name), contract: "1군 전환 · ₩ 120M" }; }
+  if (current.league === "KBO") return { name: random(japanese), league: "NPB", overall: overall + 1, contract: "포스팅 계약 · ¥ 110M" };
+  if (current.league === "NPB 2군") return { name: random(japanese), league: "NPB", overall, contract: "지배하 선수 계약 · ¥ 16M" };
+  if (current.league === "NPB") return { name: random(american), league: "Triple-A", overall: overall + 1, contract: "MLB 마이너 계약 · $1.2M" };
+  if (current.league === "Double-A") return { name: current.name, league: "Triple-A", overall, contract: "40인 로스터 초청 · $650K" };
+  return { name: current.name, league: "MLB", overall, contract: "MLB 정식 계약 · $760K" };
+}
+function Metric({ label, value }: { label: string; value: number }) { return <div className="rating"><div><span>{label}</span><b>{value}</b></div><i><em style={{ width: `${value}%` }} /></i></div>; }
+function Ladder({ title, sub, active }: { title: string; sub: string; active: boolean }) { return <div className={`ladder-node ${active ? "now" : ""}`}><i>{active ? "●" : "○"}</i><b>{title}</b><small>{sub}</small></div>; }
+function Market({ offer, accept, current }: { offer: Club | null; accept: () => void; current: Club }) { return <div className="tabpage"><div className="eyebrow">GLOBAL PLAYER MARKET</div><h2>이적 시장</h2><p>시즌 성적, 명성, 나이, 리그 레벨에 따라 구단이 다른 방식으로 접근합니다.</p>{offer ? <article className="market-offer"><TeamMuse club={offer}/><div><span>LIVE OFFER · {offer.league}</span><h3>{offer.name}</h3><p>{offer.contract} · OVR {offer.overall}</p></div><button className="advance" onClick={accept}>계약 수락 →</button></article> : <div className="market-grid"><article><span>CURRENT SITUATION</span><b>{current.name}</b><small>{current.league} · OVR {current.overall}</small><p>시즌을 완료해 성적표를 만드세요. 좋은 시즌은 콜업과 이적 제안을 불러옵니다.</p></article><article><span>POSTING / FA</span><b>해외 진출 루트</b><small>KBO ↔ NPB ↔ MLB</small><p>상위 리그의 제안은 단순 능력치가 아니라 명성과 시즌 WAR를 함께 평가합니다.</p></article></div>}</div>; }
+function Records({ history }: { history: string[] }) { return <div className="tabpage"><div className="eyebrow">CAREER DATABASE</div><h2>통산 기록</h2><div className="record-list">{history.length ? history.slice().reverse().map(x => <div key={x}><i>SEASON</i><span>{x}</span></div>) : <p>아직 기록이 없습니다.</p>}</div></div>; }
