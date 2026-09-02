@@ -20,17 +20,34 @@ import {
 } from "./game/store";
 import type { AttrKey, Position } from "./game/types";
 
-type Tab = "career" | "records" | "market";
+type Tab = "career" | "records" | "market" | "player";
+
+/** 모바일에서는 사이드 패널(능력치·컨디션)이 별도 탭이 됩니다 */
+function useIsMobile() {
+  const [m, setM] = useState(() => typeof matchMedia !== "undefined" && matchMedia("(max-width: 620px)").matches);
+  useEffect(() => {
+    const mq = matchMedia("(max-width: 620px)");
+    const on = () => setM(mq.matches);
+    mq.addEventListener("change", on);
+    return () => mq.removeEventListener("change", on);
+  }, []);
+  return m;
+}
 
 const TABS: [Tab, string][] = [
   ["career", "커리어"],
   ["records", "기록실"],
   ["market", "이적 시장"],
 ];
+const MOBILE_TABS: [Tab, string][] = [["player", "선수"], ...TABS];
 
 export function App() {
   const [state, dispatch] = useReducer(reducer, undefined, initialState);
   const [tab, setTab] = useState<Tab>("career");
+  const isMobile = useIsMobile();
+  const tabs = isMobile ? MOBILE_TABS : TABS;
+  const showSide = !isMobile || tab === "player";
+  const mainTab: Tab = tab === "player" ? "career" : tab;
   const [savedGame] = useState(() => loadGame());
   const [toasts, setToasts] = useState<
     { id: number; label: string; value: number; until: number }[]
@@ -133,7 +150,7 @@ export function App() {
           <i>BC</i> BASELINE <small>CAREER</small>
         </span>
         <nav>
-          {TABS.map(([id, label]) => (
+          {tabs.map(([id, label]) => (
             <button key={id} className={tab === id ? "on" : ""} onClick={() => setTab(id)}>
               {label}
               {id === "market" && offers?.length ? ` (${offers.length})` : ""}
@@ -181,7 +198,24 @@ export function App() {
         </div>
       </section>
 
+      {/* 모바일 전용 · 한 줄 컨디션 요약 (데스크톱에서는 CSS로 숨김) */}
+      <div className="mstrip" aria-label="컨디션 요약">
+        {[
+          ["체력", p.health, p.health < 55],
+          ["멘탈", p.morale, p.morale < 40],
+          ["신뢰", p.teamTrust, p.teamTrust < 30],
+          ["명성", p.fame, false],
+        ].map(([k, v, warn]) => (
+          <div key={k as string} className={warn ? "warn" : ""}>
+            <span>{k as string}</span>
+            <i><b style={{ width: `${Math.max(2, Math.min(100, v as number))}%` }} /></i>
+            <em>{v as number}</em>
+          </div>
+        ))}
+      </div>
+
       <div className="body">
+        {showSide && (
         <aside className="side">
           <section className="card">
             <header>
@@ -238,9 +272,11 @@ export function App() {
             </button>
           </section>
         </aside>
+        )}
 
+        {(!isMobile || tab !== "player") && (
         <main className="main">
-          {tab === "career" && (
+          {mainTab === "career" && (
             <Career
               p={p}
               event={event}
@@ -251,11 +287,12 @@ export function App() {
               onChoose={(choice) => dispatch({ type: "CHOOSE", choice })}
             />
           )}
-          {tab === "records" && <RecordsTab p={p} />}
-          {tab === "market" && (
+          {mainTab === "records" && <RecordsTab p={p} />}
+          {mainTab === "market" && (
             <MarketTab p={p} offers={offers} onAccept={(offer) => dispatch({ type: "ACCEPT", offer })} />
           )}
         </main>
+        )}
       </div>
 
       {result && (
