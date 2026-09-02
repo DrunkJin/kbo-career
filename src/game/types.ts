@@ -129,6 +129,8 @@ export type Choice = {
 
 export type GameEvent = {
   id: string;
+  /** 생략하면 공통. 타자/투수 전용 이벤트는 해당 포지션에게만 나옵니다 */
+  for?: "batter" | "pitcher";
   phases: Phase[];
   tag: string;
   title: string;

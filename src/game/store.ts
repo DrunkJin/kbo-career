@@ -41,7 +41,10 @@ export type GameState = {
   screen: "setup" | "play" | "retired";
   player: PlayerState;
   event: GameEvent | null;
+  /** 이번 시즌에 이미 나온 이벤트 */
   usedEvents: string[];
+  /** 최근 시즌들의 이벤트 기록 (최신 순, 최대 EVENT_MEMORY 시즌) — 시즌을 넘어선 반복 방지 */
+  eventHistory: string[][];
   offers: Offer[] | null;
   result: SeasonResult | null;
   headline: string;
@@ -62,6 +65,9 @@ export type Action =
 
 export const PHASE_NAMES = ["스프링캠프", "전반기", "후반기", "시즌 결산", "오프시즌"];
 
+/** 이벤트 반복 방지를 위해 기억하는 시즌 수 */
+const EVENT_MEMORY = 2;
+
 const emptyPlayer = () => createPlayer("김 커리어", "내야수");
 
 export const initialState = (): GameState => ({
@@ -69,6 +75,7 @@ export const initialState = (): GameState => ({
   player: emptyPlayer(),
   event: null,
   usedEvents: [],
+  eventHistory: [],
   offers: null,
   result: null,
   headline: "",
@@ -222,6 +229,8 @@ function endOffseason(s: GameState): GameState {
     fatigueUsed: 0,
   };
 
+  const eventHistory = [s.usedEvents, ...s.eventHistory].slice(0, EVENT_MEMORY);
+
   const forcedMove =
     left <= 0 ||
     p.ovr < LEAGUES[p.contract.league].level - 8 ||
@@ -235,6 +244,7 @@ function endOffseason(s: GameState): GameState {
       offers,
       event: null,
       usedEvents: [],
+      eventHistory,
       result: null,
       headline: left <= 0 ? "계약이 만료됐습니다. 다음 유니폼을 결정하세요." : "구단이 당신의 거취를 재검토하고 있습니다.",
     };
@@ -245,6 +255,7 @@ function endOffseason(s: GameState): GameState {
     offers: null,
     event: null,
     usedEvents: [],
+    eventHistory,
     result: null,
     headline: `${player.year} 시즌이 시작됩니다. 계약 ${left}년 남았습니다.`,
   };
@@ -271,13 +282,13 @@ export function reducer(s: GameState, action: Action): GameState {
       const p = s.player;
 
       if (p.phase <= 2) {
-        const ev = drawEvent(p, p.phase, s.usedEvents);
+        const ev = drawEvent(p, p.phase, s.usedEvents, s.eventHistory.flat());
         if (ev) return { ...s, event: ev };
         return { ...s, player: { ...p, phase: (p.phase + 1) as PlayerState["phase"] } };
       }
       if (p.phase === 3) return finishSeason(s);
       // phase 4 · 오프시즌
-      const ev = drawEvent(p, 4, s.usedEvents);
+      const ev = drawEvent(p, 4, s.usedEvents, s.eventHistory.flat());
       if (ev) return { ...s, event: ev };
       return endOffseason(s);
     }
@@ -374,7 +385,7 @@ export function loadGame(): GameState | null {
     if (!raw) return null;
     const parsed = JSON.parse(raw) as GameState;
     if (!parsed?.player?.attrs) return null;
-    return { ...parsed, event: null, result: null, deltas: [] };
+    return { ...parsed, eventHistory: parsed.eventHistory ?? [], event: null, result: null, deltas: [] };
   } catch {
     return null;
   }
