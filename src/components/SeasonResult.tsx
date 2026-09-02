@@ -1,6 +1,7 @@
 import { ATTR_LABEL, fmtAvg, type SeasonResult as SR } from "../game/engine";
 import type { AttrKey, PlayerState } from "../game/types";
-import { LeagueBadge, TeamLogo } from "./bits";
+import { LeagueBadge, TeamLogo, Term } from "./bits";
+import { seasonGrade } from "../game/describe";
 
 export function SeasonResultModal({
   result,
@@ -14,6 +15,7 @@ export function SeasonResultModal({
   const s = result.stat;
   const grown = Object.entries(result.grew) as [AttrKey, number][];
   const season = player.seasons[player.seasons.length - 1];
+  const grade = seasonGrade(s.war, s.g);
 
   return (
     <div className="modal" role="dialog" aria-modal="true">
@@ -24,6 +26,10 @@ export function SeasonResultModal({
             <h2 style={{ marginTop: 8 }}>{season?.year ?? player.year} 시즌 결산</h2>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <span className={`season-grade g-${grade.grade}`} title={grade.label}>
+              <b>{grade.grade}</b>
+              <small>{grade.label}</small>
+            </span>
             <LeagueBadge league={season?.league ?? player.contract.league} />
             <TeamLogo team={season?.team ?? player.contract.team} size={44} ring />
           </div>
@@ -33,13 +39,13 @@ export function SeasonResultModal({
           {s.kind === "batter" ? (
             <>
               <div><b>{s.g}</b><small>경기</small></div>
-              <div><b>{fmtAvg(s.avg)}</b><small>타율</small></div>
+              <div><b>{fmtAvg(s.avg)}</b><small><Term k="타율" /></small></div>
               <div className={s.hr >= 25 ? "hi" : ""}><b>{s.hr}</b><small>홈런</small></div>
               <div><b>{s.rbi}</b><small>타점</small></div>
               <div><b>{s.sb}</b><small>도루</small></div>
-              <div><b>{fmtAvg(s.obp)}</b><small>출루율</small></div>
-              <div><b>{fmtAvg(s.slg)}</b><small>장타율</small></div>
-              <div className={s.war >= 4 ? "hi" : ""}><b>{s.war}</b><small>WAR</small></div>
+              <div><b>{fmtAvg(s.obp)}</b><small><Term k="출루율" /></small></div>
+              <div><b>{fmtAvg(s.slg)}</b><small><Term k="장타율" /></small></div>
+              <div className={s.war >= 4 ? "hi" : ""}><b>{s.war}</b><small><Term k="WAR" /></small></div>
             </>
           ) : (
             <>
@@ -47,10 +53,10 @@ export function SeasonResultModal({
               <div><b>{s.ip}</b><small>이닝</small></div>
               <div><b>{s.w}-{s.l}</b><small>승-패</small></div>
               <div><b>{s.sv}</b><small>세이브</small></div>
-              <div className={s.era <= 3 ? "hi" : ""}><b>{s.era.toFixed(2)}</b><small>ERA</small></div>
-              <div><b>{s.whip.toFixed(2)}</b><small>WHIP</small></div>
+              <div className={s.era <= 3 ? "hi" : ""}><b>{s.era.toFixed(2)}</b><small><Term k="ERA" /></small></div>
+              <div><b>{s.whip.toFixed(2)}</b><small><Term k="WHIP" /></small></div>
               <div><b>{s.so}</b><small>탈삼진</small></div>
-              <div className={s.war >= 4 ? "hi" : ""}><b>{s.war}</b><small>WAR</small></div>
+              <div className={s.war >= 4 ? "hi" : ""}><b>{s.war}</b><small><Term k="WAR" /></small></div>
             </>
           )}
         </div>

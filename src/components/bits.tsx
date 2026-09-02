@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { LEAGUES, teamColor, teamLogo } from "../game/data";
+import { TERMS } from "../game/describe";
 import type { LeagueId } from "../game/types";
 
 export function TeamLogo({
@@ -36,6 +37,17 @@ export function TeamLogo({
   );
 }
 
+/** 용어에 설명 툴팁을 붙입니다. TERMS 에 없는 단어는 그냥 출력합니다. */
+export function Term({ k, children }: { k: string; children?: React.ReactNode }) {
+  const d = TERMS[k];
+  if (!d) return <>{children ?? k}</>;
+  return (
+    <abbr className="term" title={d} tabIndex={0}>
+      {children ?? k}
+    </abbr>
+  );
+}
+
 export function LeagueBadge({ league }: { league: LeagueId }) {
   const lg = LEAGUES[league];
   return (
@@ -52,7 +64,7 @@ export function Bar({
   tone = "default",
   delta,
 }: {
-  label: string;
+  label: React.ReactNode;
   value: number;
   max?: number;
   tone?: "default" | "warn" | "good";

@@ -2,7 +2,8 @@ import { LEAGUES } from "../game/data";
 import { fmtAvg, fmtSalary, roleFor } from "../game/engine";
 import { PHASE_NAMES, nextGoal, type FeedItem } from "../game/store";
 import type { Choice, GameEvent, PlayerState } from "../game/types";
-import { LeagueBadge, TeamLogo } from "./bits";
+import { LeagueBadge, TeamLogo, Term } from "./bits";
+import { RISK_DESC, describeChoice } from "../game/describe";
 
 const PHASE_SUB = ["훈련 방침", "슬럼프 · 사건", "데드라인", "성적 집계", "계약 · 휴식"];
 
@@ -58,13 +59,27 @@ export function Career({
               : headline || `${p.contract.team}에서의 여정이 계속됩니다.`}
           </p>
         </div>
-        <button className="btn primary" onClick={onAdvance} disabled={!!event || blocked}>
-          {p.phase === 3 ? "시즌 결산 보기" : p.phase === 4 ? "다음 시즌으로" : "진행하기"}
-          <kbd>Space</kbd>
-        </button>
+        {event ? (
+          <div className="pick-hint" aria-live="polite">
+            <b>↓ 아래 선택지 중 하나를 고르세요</b>
+            <small>고르기 전에는 시즌이 진행되지 않습니다</small>
+          </div>
+        ) : (
+          <button className="btn primary" onClick={onAdvance} disabled={blocked}>
+            {p.phase === 3 ? "시즌 결산 보기" : p.phase === 4 ? "다음 시즌으로" : "진행하기"}
+            <kbd>Space</kbd>
+          </button>
+        )}
       </div>
 
-      {event && <EventCard event={event} onChoose={onChoose} />}
+      {!event && (
+        <div className="goal-chip">
+          <b>다음 목표</b> {nextGoal(p)}
+          <span className="muted">· 리그 대비 {p.ovr - lg.level >= 0 ? "+" : ""}{p.ovr - lg.level}</span>
+        </div>
+      )}
+
+      {event && <EventCard event={event} position={p.position} onChoose={onChoose} />}
 
       <div className="grid-2">
         <section className="card">
@@ -78,20 +93,20 @@ export function Career({
                 {last.stat.kind === "batter" ? (
                   <>
                     <div><b>{last.stat.g}</b><small>경기</small></div>
-                    <div><b>{fmtAvg(last.stat.avg)}</b><small>타율</small></div>
+                    <div><b>{fmtAvg(last.stat.avg)}</b><small><Term k="타율" /></small></div>
                     <div className={last.stat.hr >= 25 ? "hi" : ""}><b>{last.stat.hr}</b><small>홈런</small></div>
                     <div><b>{last.stat.rbi}</b><small>타점</small></div>
                     <div><b>{last.stat.sb}</b><small>도루</small></div>
-                    <div className={last.stat.war >= 4 ? "hi" : ""}><b>{last.stat.war}</b><small>WAR</small></div>
+                    <div className={last.stat.war >= 4 ? "hi" : ""}><b>{last.stat.war}</b><small><Term k="WAR" /></small></div>
                   </>
                 ) : (
                   <>
                     <div><b>{last.stat.g}</b><small>경기</small></div>
                     <div><b>{last.stat.w}-{last.stat.l}</b><small>승-패</small></div>
-                    <div className={last.stat.era <= 3 ? "hi" : ""}><b>{last.stat.era.toFixed(2)}</b><small>ERA</small></div>
+                    <div className={last.stat.era <= 3 ? "hi" : ""}><b>{last.stat.era.toFixed(2)}</b><small><Term k="ERA" /></small></div>
                     <div><b>{last.stat.so}</b><small>탈삼진</small></div>
                     <div><b>{last.stat.ip}</b><small>이닝</small></div>
-                    <div className={last.stat.war >= 4 ? "hi" : ""}><b>{last.stat.war}</b><small>WAR</small></div>
+                    <div className={last.stat.war >= 4 ? "hi" : ""}><b>{last.stat.war}</b><small><Term k="WAR" /></small></div>
                   </>
                 )}
               </div>
@@ -121,13 +136,10 @@ export function Career({
             </div>
           </div>
           <div className="statline">
-            <div><b>{fmtSalary(p.contract.salary, p.contract.league)}</b><small>연봉</small></div>
-            <div><b>{p.contract.left}년</b><small>잔여 계약</small></div>
-            <div><b>{p.ovr - lg.level >= 0 ? "+" : ""}{p.ovr - lg.level}</b><small>리그 대비</small></div>
+            <div><b>{fmtSalary(p.contract.salary, p.contract.league)}</b><small><Term k="연봉" /></small></div>
+            <div><b>{p.contract.left}년</b><small><Term k="잔여 계약" /></small></div>
+            <div><b>{p.ovr - lg.level >= 0 ? "+" : ""}{p.ovr - lg.level}</b><small><Term k="리그 대비" /></small></div>
           </div>
-          <p className="muted" style={{ fontSize: 12, marginTop: 12, lineHeight: 1.6 }}>
-            <b style={{ color: "var(--gold)" }}>다음 목표</b> · {nextGoal(p)}
-          </p>
         </section>
       </div>
 
@@ -156,23 +168,50 @@ export function Career({
   );
 }
 
-function EventCard({ event, onChoose }: { event: GameEvent; onChoose: (c: Choice) => void }) {
+function EventCard({
+  event,
+  position,
+  onChoose,
+}: {
+  event: GameEvent;
+  position: PlayerState["position"];
+  onChoose: (c: Choice) => void;
+}) {
   return (
-    <section className="event">
+    <section className="event" id="event-card">
       <span className="tag">{event.tag}</span>
       <h3>{event.title}</h3>
       <p>{event.body}</p>
       <div className="choices">
-        {event.choices.map((c) => (
-          <button key={c.label} onClick={() => onChoose(c)}>
-            <span>
-              <b>{c.label}</b>
-              <small>{c.hint}</small>
-            </span>
-            <span className={`risk ${c.risk}`}>{c.risk}</span>
-          </button>
-        ))}
+        {event.choices.map((c) => {
+          const views = describeChoice(c, position);
+          const sure = views.length === 1;
+          return (
+            <button key={c.label} onClick={() => onChoose(c)}>
+              <span>
+                <b>{c.label}</b>
+                <small>{c.hint}</small>
+                <span className="outcomes">
+                  {views.map((v, i) => (
+                    <span key={i} className={`outcome ${v.tone}`}>
+                      {!sure && <em>{v.pct}%</em>}
+                      {v.chips.map((ch) => (
+                        <i key={ch.text} className={ch.tone}>{ch.text}</i>
+                      ))}
+                    </span>
+                  ))}
+                </span>
+              </span>
+              <span className={`risk ${c.risk}`} title={RISK_DESC[c.risk]}>{c.risk}</span>
+            </button>
+          );
+        })}
       </div>
+      <p className="risk-legend">
+        <span className="risk 안정">안정</span> {RISK_DESC.안정} ·{" "}
+        <span className="risk 도전">도전</span> {RISK_DESC.도전} ·{" "}
+        <span className="risk 무모">무모</span> {RISK_DESC.무모}
+      </p>
     </section>
   );
 }
