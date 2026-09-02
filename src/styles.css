@@ -428,7 +428,7 @@ ul {
 .app {
   min-height: 100dvh;
   display: grid;
-  grid-template-rows: auto auto 1fr;
+  grid-template-rows: auto auto auto 1fr;
 }
 .topbar {
   position: sticky;
@@ -1809,4 +1809,122 @@ table.rec .team-cell {
   .choices .outcome i { white-space: normal; }
   .season-grade small { display: none; }
   .help-btn { margin-left: 8px; }
+}
+
+/* ───────── 모바일 레이아웃 재구성 ───────── */
+.mstrip { display: none; }
+@media (max-width: 620px) {
+  /* 선수 카드: 한 줄 (로고 · 이름/팀 · OVR) */
+  .playerbar {
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+  }
+  .playerbar .logo { width: 44px !important; height: 44px !important; }
+  .pb-id h1 { font-size: 19px; gap: 6px; }
+  .pb-id h1 span { font-size: 12px; }
+  .pb-meta { margin-top: 4px; font-size: 11.5px; gap: 5px; }
+  .pb-meta .chip:not(.alert) { display: none; }
+  .ovr-block {
+    border: 1px solid var(--line);
+    border-radius: var(--r-sm);
+    padding: 6px 10px;
+    text-align: center;
+    min-width: 64px;
+  }
+  .ovr-block small { font-size: 9px; letter-spacing: 0.1em; }
+  .ovr-block b { font-size: 26px; line-height: 1.05; }
+  .ovr-block > span { display: none; }
+  .pb-money { display: none; }
+
+  /* 한 줄 컨디션 요약 */
+  .mstrip {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    padding: 8px 14px;
+    border-bottom: 1px solid var(--line);
+    background: var(--bg-2);
+  }
+  .mstrip div {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 5px;
+    font-size: 10.5px;
+    color: var(--muted);
+  }
+  .mstrip div i {
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.08);
+    overflow: hidden;
+  }
+  .mstrip div b {
+    display: block;
+    height: 100%;
+    background: var(--blue);
+    border-radius: 2px;
+  }
+  .mstrip div:first-child b { background: var(--green); }
+  .mstrip div.warn b { background: var(--red); }
+  .mstrip div em {
+    font: 600 11px var(--mono);
+    font-style: normal;
+    color: var(--text);
+  }
+
+  /* 단계 표시: 점 5개 + 현재 단계 한 줄 */
+  .stepper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    overflow: visible;
+    padding: 0;
+    scroll-snap-type: none;
+  }
+  .stepper div:not(.now) {
+    flex: 0 0 9px;
+    min-width: 0;
+    height: 9px;
+    padding: 0;
+    border-radius: 50%;
+    font-size: 0;
+    line-height: 0;
+    background: var(--line-2);
+    border: 0;
+  }
+  .stepper div.done { background: var(--text); opacity: 0.55; }
+  .stepper div:not(.now) small { display: none; }
+  .stepper div.now {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 10px 14px;
+    text-align: left;
+    font-size: 14px;
+  }
+  .stepper div.now small { margin: 0; font-size: 11.5px; }
+
+  /* 본문 여백·카드 */
+  .body { padding: 12px 12px 30px; gap: 10px; }
+  .card { padding: 14px; }
+  .card > header { margin-bottom: 10px; }
+  .headline { padding: 16px; }
+  .headline h2 { font-size: 17px; }
+  .headline p { font-size: 13px; }
+  .event { padding: 16px; }
+  .event h3 { font-size: 20px; }
+  .event > p { font-size: 13.5px; }
+  .choices button small { font-size: 12px; }
+  .choices .outcome i { font-size: 11px; padding: 2px 6px; }
+  .feed article { font-size: 13px; }
+
+  /* 선수 탭: 사이드 패널이 본문 전체를 씀 */
+  .side { width: 100%; }
+  .side .attrs { gap: 10px; }
 }
