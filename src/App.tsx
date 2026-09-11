@@ -19,7 +19,7 @@ import {
   saveGame,
   type GameState,
 } from "./game/store";
-import type { AttrKey, Position } from "./game/types";
+import type { AttrKey, Position, Speed } from "./game/types";
 
 type Tab = "career" | "records" | "market" | "player";
 
@@ -128,7 +128,7 @@ export function App() {
       <SetupScreen
         hasSave={!!savedGame}
         onContinue={() => savedGame && dispatch({ type: "LOAD", state: savedGame })}
-        onStart={(name, position) => dispatch({ type: "START", name, position })}
+        onStart={(name, position, speed) => dispatch({ type: "START", name, position, speed })}
       />
     );
 
@@ -363,7 +363,7 @@ function AttrRow({ label, value, desc }: { label: string; value: number; desc?: 
 function SetupScreen(props: {
   hasSave: boolean;
   onContinue: () => void;
-  onStart: (name: string, position: Position) => void;
+  onStart: (name: string, position: Position, speed: Speed) => void;
 }) {
   return <Setup {...props} />;
 }

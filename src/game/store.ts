@@ -50,6 +50,8 @@ export type GameState = {
   usedEvents: string[];
   /** 최근 시즌들의 이벤트 기록 (최신 순, 최대 EVENT_MEMORY 시즌) — 시즌을 넘어선 반복 방지 */
   eventHistory: string[][];
+  /** 커리어 전체에서 한 번이라도 나온 이벤트 — 다시 뽑힐 확률을 낮춥니다 */
+  seenEvents: string[];
   offers: Offer[] | null;
   result: SeasonResult | null;
   headline: string;
@@ -65,7 +67,7 @@ export type GameState = {
 };
 
 export type Action =
-  | { type: "START"; name: string; position: Position }
+  | { type: "START"; name: string; position: Position; speed?: Speed }
   | { type: "ADVANCE" }
   | { type: "CHOOSE"; choice: Choice }
   | { type: "CLOSE_RESULT" }
@@ -78,7 +80,7 @@ export type Action =
 export const PHASE_NAMES = ["스프링캠프", "전반기", "후반기", "시즌 결산", "오프시즌"];
 
 /** 이벤트 반복 방지를 위해 기억하는 시즌 수 */
-const EVENT_MEMORY = 2;
+const EVENT_MEMORY = 8; // 최근 8시즌에 나온 이벤트는 풀이 비지 않는 한 다시 뽑지 않습니다
 
 const emptyPlayer = () => createPlayer("김 커리어", "내야수");
 
@@ -88,6 +90,7 @@ export const initialState = (): GameState => ({
   event: null,
   usedEvents: [],
   eventHistory: [],
+  seenEvents: [],
   offers: null,
   result: null,
   headline: "",
@@ -199,6 +202,7 @@ function autoResolve(s: GameState, ev: GameEvent): GameState {
     player: advanced,
     event: null,
     usedEvents: [...s.usedEvents, ev.id],
+    seenEvents: s.seenEvents.includes(ev.id) ? s.seenEvents : [...s.seenEvents, ev.id],
     headline: effect.text,
     deltas,
     impacts: projectImpact(s.player, advanced),
@@ -347,6 +351,7 @@ export function reducer(s: GameState, action: Action): GameState {
       const base: GameState = {
         ...initialState(),
         screen: "play",
+        speed: action.speed ?? s.speed,
         player,
         headline: `${player.contract.team} · ${LEAGUES[player.contract.league].label}에서 커리어를 시작합니다.`,
       };
@@ -358,7 +363,7 @@ export function reducer(s: GameState, action: Action): GameState {
       const p = s.player;
 
       if (p.phase <= 2) {
-        const ev = drawEvent(p, p.phase, s.usedEvents, s.eventHistory.flat());
+        const ev = drawEvent(p, p.phase, s.usedEvents, s.eventHistory.flat(), s.seenEvents);
         if (!ev) return { ...s, player: { ...p, phase: (p.phase + 1) as PlayerState["phase"] } };
         // 속도를 올리면 이 페이즈의 이벤트를 "직접 고르지 않고" 자동으로 넘깁니다.
         // 이벤트 자체를 없애면 피해도 함께 사라져 난이도가 크게 낮아지므로,
@@ -368,7 +373,7 @@ export function reducer(s: GameState, action: Action): GameState {
       }
       if (p.phase === 3) return finishSeason(s);
       // phase 4 · 오프시즌 (오프시즌 이벤트는 속도와 무관하게 유지 — 계약·훈련 선택이 핵심이라)
-      const ev = drawEvent(p, 4, s.usedEvents, s.eventHistory.flat());
+      const ev = drawEvent(p, 4, s.usedEvents, s.eventHistory.flat(), s.seenEvents);
       if (ev) return { ...s, event: ev, impacts: [], roleShift: null };
       return endOffseason(s);
     }
@@ -382,7 +387,7 @@ export function reducer(s: GameState, action: Action): GameState {
       if (s.event || s.offers || s.result || s.screen !== "play") return s;
       let cur = s;
       for (let i = 0; i < 30 && cur.player.phase <= 2; i++) {
-        const ev = drawEvent(cur.player, cur.player.phase, cur.usedEvents);
+        const ev = drawEvent(cur.player, cur.player.phase, cur.usedEvents, cur.eventHistory.flat(), cur.seenEvents);
         if (ev) {
           cur = autoResolve(cur, ev);
           continue;
@@ -413,6 +418,7 @@ export function reducer(s: GameState, action: Action): GameState {
         player: advanced,
         event: null,
         usedEvents: [...s.usedEvents, s.event.id],
+        seenEvents: s.seenEvents.includes(s.event.id) ? s.seenEvents : [...s.seenEvents, s.event.id],
         headline: effect.text,
         deltas,
         impacts,
@@ -499,6 +505,7 @@ export function loadGame(): GameState | null {
     return {
       ...parsed,
       eventHistory: parsed.eventHistory ?? [],
+      seenEvents: parsed.seenEvents ?? [],
       event: null,
       result: null,
       deltas: [],

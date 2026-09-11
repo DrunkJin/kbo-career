@@ -2,6 +2,7 @@ import { LEAGUES, stripFarm } from "./data";
 import { isPitcher, rand, roleFor, tournamentFor } from "./engine";
 import { CAREER_EVENTS } from "./events-career";
 import { POSITION_EVENTS } from "./events-position";
+import { LIFE_EVENTS } from "./events-life";
 import { TEAM_EVENTS } from "./events-team";
 import type { Choice, GameEvent, PlayerState } from "./types";
 
@@ -33,6 +34,10 @@ const BASE_EVENTS: GameEvent[] = [
     tag: "SPRING CAMP",
     title: "스프링캠프 훈련 방침",
     body: "코칭스태프가 올해 당신의 훈련 주제를 묻습니다. 무엇에 시간을 쏟겠습니까?",
+    variants: [
+      { body: "새 시즌 첫 미팅. 코치가 화이트보드에 당신 이름을 쓰고 묻습니다. 올해 무엇을 바꿀 겁니까?" },
+      { body: "전지훈련 첫날 밤. 노트를 펴고 올해의 목표를 한 줄로 적어야 합니다." },
+    ],
     choices: [
       {
         label: "주무기를 극한까지 다듬는다",
@@ -558,6 +563,9 @@ const BASE_EVENTS: GameEvent[] = [
     tag: "트레이드 데드라인",
     title: "당신의 이름이 트레이드 명단에",
     body: "기자의 전화가 먼저 왔습니다. 구단은 아직 아무 말이 없습니다.",
+    variants: [
+      { body: "단장실 불이 늦게까지 켜져 있습니다. 데드라인 사흘 전, 당신 이름이 오르내린다는 기사가 났습니다." },
+    ],
     when: (s) => s.seasons.length >= 1,
     choices: [
       sure("구단에 직접 찾아가 담판을 짓는다", "신뢰 또는 결별", "도전", {
@@ -590,6 +598,10 @@ const BASE_EVENTS: GameEvent[] = [
     tag: "순위 싸움",
     title: "가을야구 경쟁",
     body: "팀은 반 경기 차 승부에 놓였습니다. 감독은 당신을 매 경기 내보낼 생각입니다.",
+    variants: [
+      { body: "잔여 경기 20. 5위와 반 경기 차. 감독은 당신을 매 경기 내보낼 생각입니다." },
+      { body: "9월 첫날, 순위표가 매일 바뀝니다. 벤치 분위기가 팽팽합니다." },
+    ],
     choices: [
       {
         label: "전 경기 출전을 자청한다",
@@ -812,6 +824,10 @@ const BASE_EVENTS: GameEvent[] = [
     tag: "오프시즌",
     title: "겨울을 어떻게 보낼 것인가",
     body: "시즌이 끝났습니다. 이 몇 달이 다음 시즌의 당신을 만듭니다.",
+    variants: [
+      { body: "첫눈이 내렸습니다. 다음 캠프까지 석 달. 이 겨울을 어디에 쓸지 정해야 합니다." },
+      { body: "시즌 마지막 경기가 끝난 지 일주일. 몸은 아직 무겁고 머리는 벌써 내년입니다." },
+    ],
     choices: [
       {
         label: "해외 개인 트레이닝 캠프",
@@ -1072,6 +1088,7 @@ export const EVENTS: GameEvent[] = [
   ...CAREER_EVENTS,
   ...POSITION_EVENTS,
   ...TEAM_EVENTS,
+  ...LIFE_EVENTS,
 ];
 
 /**
@@ -1100,6 +1117,7 @@ export function eventFits(e: GameEvent, s: PlayerState, phase: number, usedIds: 
  * 현재 상태에서 발생 가능한 이벤트 중 하나를 뽑습니다.
  * - usedIds: 이번 시즌에 이미 나온 이벤트 (항상 제외)
  * - recentIds: 최근 시즌들에 나온 이벤트 (풀이 비지 않는 한 제외 → 연속 반복 방지)
+ * - seenIds: 커리어 전체에서 나온 이벤트 (가중치 0.3배 → 처음 보는 이벤트 우선)
  * 조건이 구체적인 이벤트(구단·포지션·연차 지정)일수록 가중치를 올려,
  * 범용 이벤트에 묻히지 않고 제때 등장하게 합니다.
  */
@@ -1108,6 +1126,7 @@ export function drawEvent(
   phase: number,
   usedIds: string[],
   recentIds: string[] = [],
+  seenIds: string[] = [],
 ): GameEvent | null {
   const base = EVENTS.filter((e) => eventFits(e, s, phase, usedIds));
   if (!base.length) return null;
@@ -1119,15 +1138,30 @@ export function drawEvent(
     else if (e.positions) w *= 1.9;
     else if (e.minSeason !== undefined || e.maxSeason !== undefined) w *= 1.5;
     else if (e.leagues) w *= 1.4;
+    // 커리어에서 이미 본 이벤트는 처음 보는 것보다 훨씬 덜 뽑힙니다
+    if (seenIds.includes(e.id)) w *= 0.3;
     return w;
   };
   const total = pool.reduce((a, e) => a + weightOf(e), 0);
   let r = rand(total);
+  let chosen = pool[0];
   for (const e of pool) {
     r -= weightOf(e);
-    if (r <= 0) return e;
+    if (r <= 0) {
+      chosen = e;
+      break;
+    }
   }
-  return pool[0];
+  return withVariant(chosen);
+}
+
+/** 변형 본문이 있으면 그중 하나(원본 포함)를 골라 적용한 사본을 돌려줍니다 */
+function withVariant(e: GameEvent): GameEvent {
+  if (!e.variants?.length) return e;
+  const idx = Math.floor(rand(e.variants.length + 1));
+  if (idx === e.variants.length) return e; // 원본
+  const v = e.variants[idx];
+  return { ...e, title: v.title ?? e.title, body: v.body };
 }
 
 /** 가중치에 따라 결과 하나를 고릅니다. */

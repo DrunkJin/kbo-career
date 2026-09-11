@@ -1,19 +1,27 @@
 import { useState } from "react";
 import { KOREAN_NAMES, POSITIONS } from "../game/data";
 import { pick } from "../game/engine";
-import type { Position } from "../game/types";
+import { SPEED_LABEL } from "../game/store";
+import type { Position, Speed } from "../game/types";
+
+const SPEED_HELP: Record<Speed, string> = {
+  normal: "시즌마다 캠프 · 전반기 · 데드라인 이벤트를 전부 직접 고릅니다. 이야기를 꼼꼼히 즐기고 싶다면.",
+  fast: "전반기 이벤트는 자동으로 넘어갑니다. 한 시즌이 한 템포 빨라집니다.",
+  turbo: "스프링캠프 훈련 방침만 고르고 나머지는 자동. 커리어 전체를 빠르게 훑고 싶다면.",
+};
 
 export function Setup({
   onStart,
   hasSave,
   onContinue,
 }: {
-  onStart: (name: string, position: Position) => void;
+  onStart: (name: string, position: Position, speed: Speed) => void;
   hasSave: boolean;
   onContinue: () => void;
 }) {
   const [name, setName] = useState(() => pick(KOREAN_NAMES));
   const [position, setPosition] = useState<Position>("내야수");
+  const [speed, setSpeed] = useState<Speed>("normal");
 
   return (
     <main className="setup">
@@ -75,6 +83,26 @@ export function Setup({
           </div>
         </div>
 
+        <div className="field">
+          <span>진행 속도</span>
+          <div className="speed-grid" role="radiogroup" aria-label="진행 속도">
+            {(["normal", "fast", "turbo"] as const).map((sp) => (
+              <button
+                key={sp}
+                type="button"
+                role="radio"
+                aria-checked={speed === sp}
+                className={speed === sp ? "on" : ""}
+                onClick={() => setSpeed(sp)}
+              >
+                <b>{SPEED_LABEL[sp].name}</b>
+                <small>{SPEED_LABEL[sp].desc}</small>
+              </button>
+            ))}
+          </div>
+          <p className="speed-help">{SPEED_HELP[speed]} 게임 중에도 상단에서 바꿀 수 있습니다.</p>
+        </div>
+
         <div className="lottery">
           <small>SCOUTING LOTTERY</small>
           <b>시작 구단 · 리그 · 계약이 무작위로 결정됩니다</b>
@@ -84,7 +112,7 @@ export function Setup({
           </span>
         </div>
 
-        <button className="btn primary block" onClick={() => onStart(name, position)}>
+        <button className="btn primary block" onClick={() => onStart(name, position, speed)}>
           운명적인 첫 오퍼 열기 →
         </button>
         {hasSave && (

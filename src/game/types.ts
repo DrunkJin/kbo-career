@@ -150,6 +150,11 @@ export type GameEvent = {
   maxSeason?: number;
   /** 한 커리어에서 여러 번 나올 수 있는 이벤트 */
   repeatable?: boolean;
+  /**
+   * 제목·본문 변형. 뽑힐 때 하나가 무작위로 적용되어 같은 이벤트도 매번 다르게 읽힙니다.
+   * (title 을 생략하면 원래 제목을 유지)
+   */
+  variants?: { title?: string; body: string }[];
   when?: (s: PlayerState) => boolean;
   choices: Choice[];
 };
