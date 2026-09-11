@@ -428,7 +428,7 @@ ul {
 .app {
   min-height: 100dvh;
   display: grid;
-  grid-template-rows: auto auto 1fr;
+  grid-template-rows: auto auto auto 1fr;
 }
 .topbar {
   position: sticky;
@@ -1602,71 +1602,10 @@ table.rec .team-cell {
     min-height: 48px;
   }
 
-  .playerbar {
-    grid-template-columns: auto 1fr;
-    gap: 12px;
-    padding: 14px;
-  }
-  .pb-id h1 {
-    font-size: 23px;
-  }
-  .pb-meta {
-    font-size: 12px;
-    gap: 6px;
-  }
-  /* OVR 과 수입을 한 줄에 나란히 */
-  .ovr-block {
-    grid-column: 1;
-    padding: 9px 12px;
-  }
-  .ovr-block b {
-    font-size: 38px;
-  }
-  .pb-money {
-    grid-column: 2;
-    text-align: left;
-    min-width: 0;
-    align-self: center;
-  }
-
-  .body {
-    padding: 12px 12px 26px;
-    gap: 12px;
-  }
   .side {
     grid-template-columns: 1fr;
   }
-  .card {
-    padding: 14px;
-  }
-
-  /* 스테퍼: 가로 스크롤 + 현재 단계로 스냅 */
-  .stepper {
-    display: flex;
-    overflow-x: auto;
-    gap: 7px;
-    padding-bottom: 4px;
-    scroll-snap-type: x mandatory;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-  }
-  .stepper::-webkit-scrollbar {
-    height: 0;
-  }
-  .stepper div {
-    flex: 0 0 auto;
-    min-width: 98px;
-    scroll-snap-align: center;
-    font-size: 13px;
-  }
-
-  /* 진행 버튼: 화면 하단에 고정해 엄지로 누르기 쉽게 */
-  .headline {
-    padding: 16px;
-  }
-  .headline h2 {
-    font-size: 17px;
-  }
+  /* 진행 버튼은 하단 탭바 위에 고정해 엄지로 누르기 쉽게 */
   .headline-actions {
     grid-auto-flow: row;
     position: sticky;
@@ -1682,10 +1621,6 @@ table.rec .team-cell {
     display: none;
   }
 
-  /* 이벤트 선택지 — 터치 타겟 확보 */
-  .event {
-    padding: 18px 16px;
-  }
   .choices button {
     padding: 15px;
     min-height: 64px;
@@ -1820,4 +1755,335 @@ table.rec .team-cell {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* ───────── UX 개선: 선택지 효과 · 용어 · 안내 ───────── */
+.term {
+  text-decoration: underline dotted rgba(142, 166, 194, 0.7);
+  text-underline-offset: 3px;
+  cursor: help;
+}
+.pick-hint {
+  text-align: right;
+}
+.pick-hint b {
+  display: block;
+  color: var(--gold);
+  font-size: 14px;
+  letter-spacing: -0.02em;
+}
+.pick-hint small {
+  color: var(--muted);
+  font-size: 11.5px;
+}
+.goal-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 10px 14px;
+  border-radius: var(--r-sm);
+  border: 1px dashed rgba(255, 197, 61, 0.35);
+  background: rgba(255, 197, 61, 0.05);
+  font-size: 13px;
+  color: var(--text);
+}
+.goal-chip b {
+  color: var(--gold);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  font-family: var(--mono);
+}
+.goal-chip .muted {
+  font-size: 12px;
+}
+.choices button {
+  align-items: start;
+}
+.choices .outcomes {
+  display: grid;
+  gap: 6px;
+  margin-top: 9px;
+}
+.choices .outcome {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+}
+.choices .outcome em {
+  font: 600 11px var(--mono);
+  font-style: normal;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.1);
+  padding: 2px 7px;
+  border-radius: 99px;
+  margin-right: 2px;
+}
+.choices .outcome.bad em { color: var(--red); background: rgba(255, 84, 112, 0.12); }
+.choices .outcome.good em { color: var(--green); background: rgba(53, 208, 127, 0.12); }
+.choices .outcome i,
+.fx span {
+  font: 500 11.5px var(--sans);
+  font-style: normal;
+  padding: 2px 8px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+.choices .outcome i.up, .fx span.up {
+  color: var(--green);
+  background: rgba(53, 208, 127, 0.1);
+  border-color: rgba(53, 208, 127, 0.25);
+}
+.choices .outcome i.down, .fx span.down {
+  color: var(--red);
+  background: rgba(255, 84, 112, 0.1);
+  border-color: rgba(255, 84, 112, 0.25);
+}
+.choices .outcome i.flat, .fx span.flat {
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--line);
+}
+.risk-legend {
+  margin-top: 14px;
+  font-size: 11.5px;
+  color: var(--muted);
+  line-height: 2.1;
+}
+.risk-legend .risk {
+  font-size: 10px;
+  padding: 2px 7px;
+  margin-right: 4px;
+}
+.help-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid var(--line-2);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--muted);
+  font: 700 13px var(--mono);
+  margin-left: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.help-btn:hover {
+  color: var(--text);
+  border-color: var(--blue);
+}
+.season-grade {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px 6px 8px;
+  border-radius: 99px;
+  border: 1px solid var(--line-2);
+  background: rgba(255, 255, 255, 0.04);
+}
+.season-grade b {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font: 800 14px var(--mono);
+  background: var(--raise);
+  color: var(--text);
+}
+.season-grade small {
+  font-size: 11.5px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.season-grade.g-S b { background: var(--gold); color: #2a1c00; }
+.season-grade.g-A b { background: var(--green); color: #052a16; }
+.season-grade.g-B b { background: var(--blue); color: #06213d; }
+.season-grade.g-D b, .season-grade.g-F b { background: var(--red); color: #fff; }
+
+/* 안내 모달 */
+.sheet.guide {
+  width: min(560px, 100%);
+}
+.sheet.guide h2 {
+  margin-top: 8px;
+  font-size: 22px;
+  letter-spacing: -0.03em;
+}
+.sheet.guide > p {
+  margin-top: 12px;
+  font-size: 14px;
+  line-height: 1.85;
+  color: #c3d5ea;
+}
+.guide-steps {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+  margin-top: 18px;
+}
+.guide-steps div {
+  padding: 9px 4px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--line);
+  text-align: center;
+  font: 700 12px var(--sans);
+  color: var(--muted);
+}
+.guide-steps div.done { color: var(--text); background: rgba(255, 255, 255, 0.06); }
+.guide-steps div.now { color: #200a04; background: var(--orange); border-color: var(--orange); }
+.fx {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 18px;
+}
+.sheet.guide .statline {
+  margin-top: 18px;
+}
+.guide-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-top: 24px;
+  flex-wrap: wrap;
+}
+.guide-nav .dots {
+  display: flex;
+  gap: 6px;
+}
+.guide-nav .dots i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--line-2);
+}
+.guide-nav .dots i.on {
+  background: var(--orange);
+}
+@media (max-width: 620px) {
+  .pick-hint { text-align: left; }
+  .choices .outcome i { white-space: normal; }
+  .season-grade small { display: none; }
+  .help-btn { margin-left: 8px; }
+}
+
+/* ───────── 모바일 레이아웃 재구성 ───────── */
+.mstrip { display: none; }
+@media (max-width: 620px) {
+  /* 선수 카드: 한 줄 (로고 · 이름/팀 · OVR) */
+  .playerbar {
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+  }
+  .playerbar .logo { width: 44px !important; height: 44px !important; }
+  .pb-id h1 { font-size: 19px; gap: 6px; }
+  .pb-id h1 span { font-size: 12px; }
+  .pb-meta { margin-top: 4px; font-size: 11.5px; gap: 5px; }
+  .pb-meta .chip:not(.alert) { display: none; }
+  .ovr-block {
+    border: 1px solid var(--line);
+    border-radius: var(--r-sm);
+    padding: 6px 10px;
+    text-align: center;
+    min-width: 64px;
+  }
+  .ovr-block small { font-size: 9px; letter-spacing: 0.1em; }
+  .ovr-block b { font-size: 26px; line-height: 1.05; }
+  .ovr-block > span { display: none; }
+  .pb-money { display: none; }
+
+  /* 한 줄 컨디션 요약 */
+  .mstrip {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    padding: 8px 14px;
+    border-bottom: 1px solid var(--line);
+    background: var(--bg-2);
+  }
+  .mstrip div {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 5px;
+    font-size: 10.5px;
+    color: var(--muted);
+  }
+  .mstrip div i {
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.08);
+    overflow: hidden;
+  }
+  .mstrip div b {
+    display: block;
+    height: 100%;
+    background: var(--blue);
+    border-radius: 2px;
+  }
+  .mstrip div:first-child b { background: var(--green); }
+  .mstrip div.warn b { background: var(--red); }
+  .mstrip div em {
+    font: 600 11px var(--mono);
+    font-style: normal;
+    color: var(--text);
+  }
+
+  /* 단계 표시: 점 5개 + 현재 단계 한 줄 */
+  .stepper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    overflow: visible;
+    padding: 0;
+    scroll-snap-type: none;
+  }
+  .stepper div:not(.now) {
+    flex: 0 0 9px;
+    min-width: 0;
+    height: 9px;
+    padding: 0;
+    border-radius: 50%;
+    font-size: 0;
+    line-height: 0;
+    background: var(--line-2);
+    border: 0;
+  }
+  .stepper div.done { background: var(--text); opacity: 0.55; }
+  .stepper div:not(.now) small { display: none; }
+  .stepper div.now {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 10px 14px;
+    text-align: left;
+    font-size: 14px;
+  }
+  .stepper div.now small { margin: 0; font-size: 11.5px; }
+
+  /* 본문 여백·카드 */
+  .body { padding: 12px 12px 30px; gap: 10px; }
+  .card { padding: 14px; }
+  .card > header { margin-bottom: 10px; }
+  .headline { padding: 16px; }
+  .headline h2 { font-size: 17px; }
+  .headline p { font-size: 13px; }
+  .event { padding: 16px; }
+  .event h3 { font-size: 20px; }
+  .event > p { font-size: 13.5px; }
+  .choices button small { font-size: 12px; }
+  .choices .outcome i { font-size: 11px; padding: 2px 6px; }
+  .feed article { font-size: 13px; }
+
+  /* 선수 탭: 사이드 패널이 본문 전체를 씀 */
+  .side { width: 100%; }
+  .side .attrs { gap: 10px; }
 }

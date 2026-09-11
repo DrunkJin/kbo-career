@@ -5,7 +5,8 @@ import { RecordsTab } from "./components/Records";
 import { Setup } from "./components/Setup";
 import { Retire } from "./components/Retire";
 import { SeasonResultModal } from "./components/SeasonResult";
-import { Bar, Rolling, TeamLogo, Toasts } from "./components/bits";
+import { Bar, Rolling, TeamLogo, Term, Toasts } from "./components/bits";
+import { Guide } from "./components/Guide";
 import { LEAGUES, teamColor } from "./game/data";
 import { ATTR_DESC, ATTR_LABEL, potentialGrade, visibleKeys } from "./game/engine";
 import {
@@ -20,22 +21,45 @@ import {
 } from "./game/store";
 import type { AttrKey, Position } from "./game/types";
 
-type Tab = "career" | "records" | "market";
+type Tab = "career" | "records" | "market" | "player";
+
+/** 모바일에서는 사이드 패널(능력치·컨디션)이 별도 탭이 됩니다 */
+function useIsMobile() {
+  const [m, setM] = useState(() => typeof matchMedia !== "undefined" && matchMedia("(max-width: 620px)").matches);
+  useEffect(() => {
+    const mq = matchMedia("(max-width: 620px)");
+    const on = () => setM(mq.matches);
+    mq.addEventListener("change", on);
+    return () => mq.removeEventListener("change", on);
+  }, []);
+  return m;
+}
 
 const TABS: [Tab, string][] = [
   ["career", "커리어"],
   ["records", "기록실"],
   ["market", "이적 시장"],
 ];
+const MOBILE_TABS: [Tab, string][] = [["player", "선수"], ...TABS];
 
 export function App() {
   const [state, dispatch] = useReducer(reducer, undefined, initialState);
   const [tab, setTab] = useState<Tab>("career");
+  const isMobile = useIsMobile();
+  const tabs = isMobile ? MOBILE_TABS : TABS;
+  const showSide = !isMobile || tab === "player";
+  const mainTab: Tab = tab === "player" ? "career" : tab;
   const [savedGame] = useState(() => loadGame());
   const [toasts, setToasts] = useState<
     { id: number; label: string; value: number; until: number }[]
   >([]);
   const [showDesc, setShowDesc] = useState(false);
+  const GUIDE_KEY = "kbo-career-guide-seen";
+  const [guide, setGuide] = useState(false);
+  const closeGuide = () => {
+    setGuide(false);
+    try { localStorage.setItem(GUIDE_KEY, "1"); } catch { /* ignore */ }
+  };
   const toastSeq = useRef(0);
 
   const { player: p, event, offers, result, screen } = state;
@@ -44,6 +68,14 @@ export function App() {
   useEffect(() => {
     saveGame(state);
   }, [state]);
+
+  /* 처음 플레이를 시작하면 안내를 한 번 보여줍니다 */
+  useEffect(() => {
+    if (state.screen !== "play") return;
+    let seen = "1";
+    try { seen = localStorage.getItem(GUIDE_KEY) ?? ""; } catch { /* ignore */ }
+    if (!seen) setGuide(true);
+  }, [state.screen]);
 
   /* 능력치 변화 토스트 — 만료 시각을 들고 있다가 한 타이머가 일괄 정리합니다.
      (배치마다 setTimeout 을 걸면 effect cleanup 이 이전 타이머를 죽여 토스트가 쌓입니다) */
@@ -79,13 +111,14 @@ export function App() {
       if (el && /INPUT|TEXTAREA/.test(el.tagName)) return;
       if (e.code !== "Space" && e.code !== "Enter") return;
       e.preventDefault(); // 이벤트 대기 중에도 스페이스로 페이지가 스크롤되지 않도록
+      if (guide) return;
       if (event || offers) return;
       if (result) dispatch({ type: "CLOSE_RESULT" });
       else dispatch({ type: "ADVANCE" });
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [screen, event, offers, result]);
+  }, [screen, event, offers, result, guide]);
 
   const keys = useMemo(() => visibleKeys(p.position), [p.position]);
   const lg = LEAGUES[p.contract.league];
@@ -118,7 +151,7 @@ export function App() {
           <i>BC</i> BASELINE <small>CAREER</small>
         </span>
         <nav>
-          {TABS.map(([id, label]) => (
+          {tabs.map(([id, label]) => (
             <button key={id} className={tab === id ? "on" : ""} onClick={() => setTab(id)}>
               {label}
               {id === "market" && offers?.length ? ` (${offers.length})` : ""}
@@ -144,6 +177,7 @@ export function App() {
             <span>AGE {p.age}</span>
           </div>
         </div>
+        <button className="help-btn" onClick={() => setGuide(true)} title="게임 안내">?</button>
       </header>
 
       <section className="playerbar" style={{ ["--team" as string]: teamColor(p.contract.team) }}>
@@ -165,12 +199,12 @@ export function App() {
           </div>
         </div>
         <div className="ovr-block">
-          <small>OVERALL</small>
+          <small><Term k="OVR">OVERALL</Term></small>
           <b>
             <Rolling value={p.ovr} />
           </b>
           <span>
-            PEAK {p.peakOvr} · <span className="pot">잠재력 {potentialGrade(p.potential)}</span>
+            PEAK {p.peakOvr} · <span className="pot"><Term k="잠재력">잠재력</Term> {potentialGrade(p.potential)}</span>
           </span>
         </div>
         <div className="pb-money">
@@ -180,7 +214,24 @@ export function App() {
         </div>
       </section>
 
+      {/* 모바일 전용 · 한 줄 컨디션 요약 (데스크톱에서는 CSS로 숨김) */}
+      <div className="mstrip" aria-label="컨디션 요약">
+        {[
+          ["체력", p.health, p.health < 55],
+          ["멘탈", p.morale, p.morale < 40],
+          ["신뢰", p.teamTrust, p.teamTrust < 30],
+          ["명성", p.fame, false],
+        ].map(([k, v, warn]) => (
+          <div key={k as string} className={warn ? "warn" : ""}>
+            <span>{k as string}</span>
+            <i><b style={{ width: `${Math.max(2, Math.min(100, v as number))}%` }} /></i>
+            <em>{v as number}</em>
+          </div>
+        ))}
+      </div>
+
       <div className="body">
+        {showSide && (
         <aside className="side">
           <section className="card">
             <header>
@@ -208,10 +259,10 @@ export function App() {
           <section className="card">
             <header><h3>컨디션</h3></header>
             <div style={{ display: "grid", gap: 13 }}>
-              <Bar label="체력" value={p.health} tone={p.health < 55 ? "warn" : "good"} />
-              <Bar label="멘탈" value={p.morale} tone={p.morale < 40 ? "warn" : "default"} />
-              <Bar label="명성" value={p.fame} />
-              <Bar label="구단 신뢰" value={p.teamTrust} tone={p.teamTrust < 30 ? "warn" : "default"} />
+              <Bar label={<Term k="체력" />} value={p.health} tone={p.health < 55 ? "warn" : "good"} />
+              <Bar label={<Term k="멘탈" />} value={p.morale} tone={p.morale < 40 ? "warn" : "default"} />
+              <Bar label={<Term k="명성" />} value={p.fame} />
+              <Bar label={<Term k="구단 신뢰" />} value={p.teamTrust} tone={p.teamTrust < 30 ? "warn" : "default"} />
             </div>
           </section>
 
@@ -237,9 +288,11 @@ export function App() {
             </button>
           </section>
         </aside>
+        )}
 
+        {(!isMobile || tab !== "player") && (
         <main className="main">
-          {tab === "career" && (
+          {mainTab === "career" && (
             <Career
               p={p}
               event={event}
@@ -253,11 +306,12 @@ export function App() {
               onChoose={(choice) => dispatch({ type: "CHOOSE", choice })}
             />
           )}
-          {tab === "records" && <RecordsTab p={p} />}
-          {tab === "market" && (
+          {mainTab === "records" && <RecordsTab p={p} />}
+          {mainTab === "market" && (
             <MarketTab p={p} offers={offers} onAccept={(offer) => dispatch({ type: "ACCEPT", offer })} />
           )}
         </main>
+        )}
       </div>
 
       {result && (
@@ -273,6 +327,7 @@ export function App() {
         <OfferModal offers={offers} player={p} onAccept={(offer) => dispatch({ type: "ACCEPT", offer })} />
       )}
       <Toasts items={toasts} />
+      {guide && <Guide onClose={closeGuide} />}
     </div>
   );
 }

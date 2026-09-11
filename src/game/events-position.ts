@@ -9,41 +9,6 @@ const edge = (s: PlayerState) => s.ovr - LEAGUES[s.contract.league].level;
 export const POSITION_EVENTS: GameEvent[] = [
   /* ══════════════════ 투수 ══════════════════ */
   {
-    id: "p-new-pitch",
-    phases: [0],
-    tag: "투수",
-    title: "새 구종 장착",
-    body: "전력분석팀이 말합니다. 당신의 공은 이제 읽히고 있다고. 구종 하나를 더 만들 시간입니다.",
-    positions: ["투수"],
-    choices: [
-      {
-        label: "스플리터를 장착한다",
-        hint: "구위 상승 · 팔에 부담",
-        risk: "도전",
-        outcomes: [
-          { weight: 3, effect: { attrs: { movement: 5, velocity: 1 }, health: -8, text: "떨어지는 공이 생겼습니다. 헛스윙이 눈에 띄게 늘었습니다.", tone: "good" } },
-          { weight: 2, effect: { attrs: { movement: 1 }, health: -18, injury: { name: "팔꿈치 염증", severity: 0.3 }, text: "손가락을 벌려 던지는 공은 팔꿈치를 갉아먹었습니다.", tone: "bad" } },
-        ],
-      },
-      {
-        label: "체인지업을 다듬는다",
-        hint: "안정적인 제구 향상",
-        risk: "안정",
-        outcomes: [
-          { weight: 1, effect: { attrs: { control: 3, movement: 2 }, text: "완급 조절이 가능해졌습니다. 타자의 타이밍이 흔들립니다.", tone: "good" } },
-        ],
-      },
-      {
-        label: "지금 구종으로 승부한다",
-        hint: "기존 강점 강화",
-        risk: "안정",
-        outcomes: [
-          { weight: 1, effect: { focus: "strength", attrs: { mental: 2 }, text: "잘 던지던 공을 더 잘 던지기로 했습니다. 단순한 답도 답입니다.", tone: "good" } },
-        ],
-      },
-    ],
-  },
-  {
     id: "p-velocity-chase",
     phases: [0],
     tag: "투수",
@@ -67,34 +32,6 @@ export const POSITION_EVENTS: GameEvent[] = [
         risk: "안정",
         outcomes: [
           { weight: 1, effect: { attrs: { control: 4, movement: 2, mental: 1 }, text: "빠르지 않아도 칠 수 없는 공이 있습니다.", tone: "good" } },
-        ],
-      },
-    ],
-  },
-  {
-    id: "p-pitch-count",
-    phases: [1],
-    tag: "투수",
-    title: "8회, 투구수 108개",
-    body: "완투가 눈앞입니다. 불펜은 이미 몸을 풀었고, 감독은 당신을 봅니다.",
-    positions: ["투수"],
-    when: (s) => edge(s) >= -2,
-    choices: [
-      {
-        label: "9회까지 간다",
-        hint: "명성·신뢰 · 부상 위험",
-        risk: "무모",
-        outcomes: [
-          { weight: 3, effect: { fame: 16, teamTrust: 16, morale: 12, health: -12, attrs: { stamina: 2 }, text: "완투. 마운드에서 모자를 벗어 인사했습니다.", tone: "good" } },
-          { weight: 2, effect: { health: -22, injury: { name: "어깨 피로 누적", severity: 0.4 }, morale: -8, text: "9회에 무너졌습니다. 어깨가 식은 뒤에야 통증이 왔습니다.", tone: "bad" } },
-        ],
-      },
-      {
-        label: "공을 넘기고 내려온다",
-        hint: "체력 보존",
-        risk: "안정",
-        outcomes: [
-          { weight: 1, effect: { health: 6, attrs: { mental: 2 }, text: "박수를 받으며 내려왔습니다. 시즌은 깁니다.", tone: "good" } },
         ],
       },
     ],
