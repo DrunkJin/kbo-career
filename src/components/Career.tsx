@@ -1,8 +1,9 @@
+import { useMemo } from "react";
 import { LEAGUES } from "../game/data";
-import { fmtAvg, fmtSalary, roleFor } from "../game/engine";
+import { fmtAvg, fmtSalary, projectSeason, roleFor, type Impact } from "../game/engine";
 import { PHASE_NAMES, nextGoal, type FeedItem } from "../game/store";
 import type { Choice, GameEvent, PlayerState } from "../game/types";
-import { LeagueBadge, TeamLogo } from "./bits";
+import { ImpactList, LeagueBadge, ProjectionLine, TeamLogo } from "./bits";
 
 const PHASE_SUB = ["훈련 방침", "슬럼프 · 사건", "데드라인", "성적 집계", "계약 · 휴식"];
 
@@ -11,7 +12,10 @@ export function Career({
   event,
   headline,
   feed,
+  impacts,
+  roleShift,
   onAdvance,
+  onFastForward,
   onChoose,
   blocked,
 }: {
@@ -19,13 +23,18 @@ export function Career({
   event: GameEvent | null;
   headline: string;
   feed: FeedItem[];
+  impacts: Impact[];
+  roleShift: { from: string; to: string } | null;
   onAdvance: () => void;
+  onFastForward: () => void;
   onChoose: (c: Choice) => void;
   blocked: boolean;
 }) {
   const lg = LEAGUES[p.contract.league];
   const last = p.seasons[p.seasons.length - 1];
   const role = roleFor(p);
+  const projection = useMemo(() => projectSeason(p), [p]);
+  const showImpacts = !event && (impacts.length > 0 || !!roleShift);
 
   return (
     <>
@@ -57,14 +66,46 @@ export function Career({
               ? "아래 선택지 중 하나를 고르세요. 되돌릴 수 없습니다."
               : headline || `${p.contract.team}에서의 여정이 계속됩니다.`}
           </p>
+          {showImpacts && (
+            <div className="impact-wrap">
+              <span className="impact-title">이 선택으로 달라진 것</span>
+              <ImpactList impacts={impacts} roleShift={roleShift} />
+            </div>
+          )}
         </div>
-        <button className="btn primary" onClick={onAdvance} disabled={!!event || blocked}>
-          {p.phase === 3 ? "시즌 결산 보기" : p.phase === 4 ? "다음 시즌으로" : "진행하기"}
-          <kbd>Space</kbd>
-        </button>
+        <div className="headline-actions">
+          <button className="btn primary" onClick={onAdvance} disabled={!!event || blocked}>
+            {p.phase === 3 ? "시즌 결산 보기" : p.phase === 4 ? "다음 시즌으로" : "진행하기"}
+            <kbd>Space</kbd>
+          </button>
+          {p.phase < 3 && (
+            <button
+              className="btn ghost"
+              onClick={onFastForward}
+              disabled={!!event || blocked}
+              title="남은 이벤트를 자동으로 처리하고 시즌 결산까지 진행합니다"
+            >
+              ⏩ 시즌 자동 진행
+            </button>
+          )}
+        </div>
       </div>
 
       {event && <EventCard event={event} onChoose={onChoose} />}
+
+      <section className="card projection">
+        <header>
+          <h3>지금 이대로 풀시즌을 치르면</h3>
+          <span className="muted mono" style={{ fontSize: 11 }}>
+            {role} · 운 중립 기준
+          </span>
+        </header>
+        <ProjectionLine stat={projection} />
+        <p className="muted projection-note">
+          능력치가 바뀌면 이 숫자가 곧바로 움직입니다. 실제 성적은 운과 부상에 따라 위아래로
+          흔들립니다.
+        </p>
+      </section>
 
       <div className="grid-2">
         <section className="card">
@@ -111,13 +152,11 @@ export function Career({
             <h3>현재 상황</h3>
             <LeagueBadge league={p.contract.league} />
           </header>
-          <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 14 }}>
+          <div className="team-line">
             <TeamLogo team={p.contract.team} size={52} ring />
             <div>
-              <b style={{ fontSize: 15 }}>{p.contract.team}</b>
-              <p className="muted" style={{ fontSize: 12, marginTop: 3 }}>
-                {lg.label} · {role}
-              </p>
+              <b>{p.contract.team}</b>
+              <p className="muted">{lg.label} · {role}</p>
             </div>
           </div>
           <div className="statline">

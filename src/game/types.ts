@@ -127,6 +127,9 @@ export type Choice = {
   outcomes: Outcome[];
 };
 
+/** 게임 진행 속도 — 한 시즌에 등장하는 이벤트 수가 달라집니다 */
+export type Speed = "normal" | "fast" | "turbo";
+
 export type GameEvent = {
   id: string;
   phases: Phase[];
@@ -134,6 +137,17 @@ export type GameEvent = {
   title: string;
   body: string;
   weight?: number;
+  /** 이 포지션에서만 등장 */
+  positions?: Position[];
+  /** 이 리그에서만 등장 */
+  leagues?: LeagueId[];
+  /** 이 구단에서만 등장 (모구단 이름 기준) */
+  teams?: string[];
+  /** 프로 n년차 이상 / 이하 (첫 시즌 = 1년차) */
+  minSeason?: number;
+  maxSeason?: number;
+  /** 한 커리어에서 여러 번 나올 수 있는 이벤트 */
+  repeatable?: boolean;
   when?: (s: PlayerState) => boolean;
   choices: Choice[];
 };

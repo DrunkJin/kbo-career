@@ -1,14 +1,18 @@
-import { ATTR_LABEL, fmtAvg, type SeasonResult as SR } from "../game/engine";
+import { ATTR_LABEL, fmtAvg, type Impact, type SeasonResult as SR } from "../game/engine";
 import type { AttrKey, PlayerState } from "../game/types";
-import { LeagueBadge, TeamLogo } from "./bits";
+import { ImpactList, LeagueBadge, TeamLogo } from "./bits";
 
 export function SeasonResultModal({
   result,
   player,
+  impacts,
+  roleShift,
   onClose,
 }: {
   result: SR;
   player: PlayerState;
+  impacts: Impact[];
+  roleShift: { from: string; to: string } | null;
   onClose: () => void;
 }) {
   const s = result.stat;
@@ -76,6 +80,12 @@ export function SeasonResultModal({
         <p className="eyebrow" style={{ marginTop: 20 }}>
           {result.declined ? "노쇠화" : "성장"}
         </p>
+        {(impacts.length > 0 || roleShift) && (
+          <div className="impact-wrap in-sheet">
+            <span className="impact-title">내년 예상 성적이 이렇게 바뀝니다</span>
+            <ImpactList impacts={impacts} roleShift={roleShift} />
+          </div>
+        )}
         <div className="growth-strip">
           {grown.length ? (
             grown.map(([k, v]) => (

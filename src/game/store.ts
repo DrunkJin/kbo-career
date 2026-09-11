@@ -5,13 +5,17 @@ import {
   computeOvr,
   createPlayer,
   isPitcher,
+  projectImpact,
+  projectSeason,
   r1,
+  roleChange,
   roleFor,
   shouldRetire,
   simulateSeason,
   statSummary,
   tournamentFor,
   visibleKeys,
+  type Impact,
   type SeasonResult,
 } from "./engine";
 import { drawEvent, rollOutcome } from "./events";
@@ -25,6 +29,7 @@ import type {
   PlayerState,
   Position,
   SeasonRecord,
+  Speed,
 } from "./types";
 
 export type FeedItem = {
@@ -47,8 +52,13 @@ export type GameState = {
   headline: string;
   feed: FeedItem[];
   deltas: Delta[];
+  /** 직전 선택이 성적에 끼친 영향 (체감용) */
+  impacts: Impact[];
+  /** 백업 → 주전 같은 역할 변화 */
+  roleShift: { from: string; to: string } | null;
   retireReason: string;
   feedSeq: number;
+  speed: Speed;
 };
 
 export type Action =
@@ -58,6 +68,8 @@ export type Action =
   | { type: "CLOSE_RESULT" }
   | { type: "ACCEPT"; offer: Offer }
   | { type: "RESET" }
+  | { type: "SET_SPEED"; speed: Speed }
+  | { type: "FAST_FORWARD" }
   | { type: "LOAD"; state: GameState };
 
 export const PHASE_NAMES = ["스프링캠프", "전반기", "후반기", "시즌 결산", "오프시즌"];
@@ -74,9 +86,25 @@ export const initialState = (): GameState => ({
   headline: "",
   feed: [],
   deltas: [],
+  impacts: [],
+  roleShift: null,
   retireReason: "",
   feedSeq: 0,
+  speed: "normal",
 });
+
+/** 속도별로 정규 시즌 중 이벤트가 등장하는 페이즈 */
+export function eventPhases(speed: Speed): number[] {
+  if (speed === "turbo") return [0];       // 스프링캠프 훈련 선택만
+  if (speed === "fast") return [0, 2];     // 캠프 + 데드라인
+  return [0, 1, 2];                        // 전부
+}
+
+export const SPEED_LABEL: Record<Speed, { name: string; desc: string }> = {
+  normal: { name: "기본", desc: "시즌당 이벤트 3회" },
+  fast: { name: "빠르게", desc: "시즌당 이벤트 2회" },
+  turbo: { name: "초고속", desc: "시즌당 이벤트 1회" },
+};
 
 /* ─────────────────── 효과 적용 ─────────────────── */
 
@@ -147,6 +175,42 @@ const feed = (s: GameState, tag: string, text: string, tone: FeedItem["tone"] = 
   feed: [{ id: s.feedSeq + 1, year: s.player.year, text, tone, tag }, ...s.feed].slice(0, 60),
 });
 
+/**
+ * 이벤트를 플레이어 대신 무작위로 처리합니다 (스피드 모드).
+ * 선택지를 고르는 손맛만 빠질 뿐, 능력치·체력·부상 영향은 그대로 받습니다.
+ */
+function autoResolve(s: GameState, ev: GameEvent): GameState {
+  const choice = ev.choices[Math.floor(Math.random() * ev.choices.length)];
+  const effect = rollOutcome(choice);
+  const { player, deltas } = applyEffect(s.player, effect);
+  const advanced: PlayerState = {
+    ...player,
+    phase: Math.min(3, player.phase + 1) as PlayerState["phase"],
+  };
+  let next: GameState = {
+    ...s,
+    player: advanced,
+    event: null,
+    usedEvents: [...s.usedEvents, ev.id],
+    headline: effect.text,
+    deltas,
+    impacts: projectImpact(s.player, advanced),
+    roleShift: roleChange(s.player, advanced),
+  };
+  next = feed(next, `${ev.tag} · 자동`, `${choice.label} — ${effect.text}`, effect.tone ?? "neutral");
+  if (effect.trait) next = feed(next, "특성 획득", `‘${effect.trait}’ 특성을 얻었습니다.`, "good");
+  if (effect.intl) {
+    const name = tournamentFor(s.player.year) ?? `${s.player.year} 국제대회`;
+    next = feed(
+      next,
+      "국가대표",
+      `${name} ${effect.intl.result}${effect.intl.medal ? ` (${effect.intl.medal}메달)` : ""}`,
+      effect.intl.medal ? "good" : "neutral",
+    );
+  }
+  return next;
+}
+
 /* ─────────────────── 시즌 마감 ─────────────────── */
 
 function finishSeason(s: GameState): GameState {
@@ -195,7 +259,19 @@ function finishSeason(s: GameState): GameState {
   player.peakOvr = Math.max(player.peakOvr, player.ovr);
   if (player.injury && player.injury.severity <= 0) player.injury = null;
 
-  let next: GameState = { ...s, player, result, event: null, headline: result.narrative };
+  // 시즌 성장/노쇠가 다음 시즌 성적을 어떻게 바꾸는지
+  const impacts = projectImpact(p, player);
+  const shift = roleChange(p, player);
+
+  let next: GameState = {
+    ...s,
+    player,
+    result,
+    event: null,
+    headline: result.narrative,
+    impacts,
+    roleShift: shift,
+  };
   next = feed(next, `${p.year} 시즌`, `${p.contract.team} · ${statSummary(result.stat)}`,
     result.stat.war >= 3 ? "good" : result.stat.war < 0.5 ? "bad" : "neutral");
   result.awards.forEach((a) => { next = feed(next, "수상", a, "good"); });
@@ -272,14 +348,40 @@ export function reducer(s: GameState, action: Action): GameState {
 
       if (p.phase <= 2) {
         const ev = drawEvent(p, p.phase, s.usedEvents);
-        if (ev) return { ...s, event: ev };
-        return { ...s, player: { ...p, phase: (p.phase + 1) as PlayerState["phase"] } };
+        if (!ev) return { ...s, player: { ...p, phase: (p.phase + 1) as PlayerState["phase"] } };
+        // 속도를 올리면 이 페이즈의 이벤트를 "직접 고르지 않고" 자동으로 넘깁니다.
+        // 이벤트 자체를 없애면 피해도 함께 사라져 난이도가 크게 낮아지므로,
+        // 무작위 선택으로 대신 처리하고 결과만 뉴스에 남깁니다.
+        if (!eventPhases(s.speed).includes(p.phase)) return autoResolve(s, ev);
+        return { ...s, event: ev, impacts: [], roleShift: null };
       }
       if (p.phase === 3) return finishSeason(s);
-      // phase 4 · 오프시즌
+      // phase 4 · 오프시즌 (오프시즌 이벤트는 속도와 무관하게 유지 — 계약·훈련 선택이 핵심이라)
       const ev = drawEvent(p, 4, s.usedEvents);
-      if (ev) return { ...s, event: ev };
+      if (ev) return { ...s, event: ev, impacts: [], roleShift: null };
       return endOffseason(s);
+    }
+
+    case "SET_SPEED":
+      return { ...s, speed: action.speed };
+
+    case "FAST_FORWARD": {
+      // 남은 정규시즌 이벤트를 자동으로 처리하고 시즌 결산까지 한 번에 갑니다.
+      // (그냥 ADVANCE 를 반복하면 첫 이벤트에서 멈춰 버려 의미가 없습니다)
+      if (s.event || s.offers || s.result || s.screen !== "play") return s;
+      let cur = s;
+      for (let i = 0; i < 30 && cur.player.phase <= 2; i++) {
+        const ev = drawEvent(cur.player, cur.player.phase, cur.usedEvents);
+        if (ev) {
+          cur = autoResolve(cur, ev);
+          continue;
+        }
+        cur = {
+          ...cur,
+          player: { ...cur.player, phase: (cur.player.phase + 1) as PlayerState["phase"] },
+        };
+      }
+      return cur.player.phase === 3 ? finishSeason(cur) : cur;
     }
 
     case "CHOOSE": {
@@ -291,6 +393,10 @@ export function reducer(s: GameState, action: Action): GameState {
         ? player
         : { ...player, phase: Math.min(3, player.phase + 1) as PlayerState["phase"] };
 
+      // 능력치 숫자 대신 "성적이 어떻게 달라지는가"를 계산해 보여줍니다
+      const impacts = projectImpact(s.player, advanced);
+      const shift = roleChange(s.player, advanced);
+
       let next: GameState = {
         ...s,
         player: advanced,
@@ -298,6 +404,8 @@ export function reducer(s: GameState, action: Action): GameState {
         usedEvents: [...s.usedEvents, s.event.id],
         headline: effect.text,
         deltas,
+        impacts,
+        roleShift: shift,
       };
       next = feed(next, s.event.tag, effect.text, effect.tone ?? "neutral");
       if (effect.trait) next = feed(next, "특성 획득", `‘${effect.trait}’ 특성을 얻었습니다.`, "good");
@@ -310,7 +418,7 @@ export function reducer(s: GameState, action: Action): GameState {
           effect.intl.medal ? "good" : "neutral",
         );
       }
-      return wasOffseason ? { ...endOffseason(next), deltas } : next;
+      return wasOffseason ? { ...endOffseason(next), deltas, impacts, roleShift: shift } : next;
     }
 
     case "CLOSE_RESULT":
@@ -362,7 +470,10 @@ const KEY = "kbo-career-save-v2";
 export function saveGame(s: GameState) {
   if (s.screen === "setup") return;
   try {
-    localStorage.setItem(KEY, JSON.stringify({ ...s, event: null, result: null }));
+    localStorage.setItem(
+      KEY,
+      JSON.stringify({ ...s, event: null, result: null, impacts: [], roleShift: null }),
+    );
   } catch {
     /* 저장 실패는 무시 */
   }
@@ -374,7 +485,15 @@ export function loadGame(): GameState | null {
     if (!raw) return null;
     const parsed = JSON.parse(raw) as GameState;
     if (!parsed?.player?.attrs) return null;
-    return { ...parsed, event: null, result: null, deltas: [] };
+    return {
+      ...parsed,
+      event: null,
+      result: null,
+      deltas: [],
+      impacts: [],
+      roleShift: null,
+      speed: parsed.speed ?? "normal",
+    };
   } catch {
     return null;
   }

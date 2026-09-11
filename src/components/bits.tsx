@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { LEAGUES, teamColor, teamLogo } from "../game/data";
-import type { LeagueId } from "../game/types";
+import { fmtAvg, type Impact } from "../game/engine";
+import type { LeagueId, StatLine } from "../game/types";
 
 export function TeamLogo({
   team,
@@ -108,6 +109,80 @@ export function Toasts({ items }: { items: { id: number; label: string; value: n
             {t.value > 0 ? "+" : ""}
             {Math.round(t.value * 10) / 10}
           </b>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * 능력치 변화를 "성적이 이렇게 달라진다"로 보여주는 목록.
+ * 숫자 하나(컨택 +2)보다 타율 .285 → .291 이 훨씬 체감됩니다.
+ */
+export function ImpactList({
+  impacts,
+  roleShift,
+  compact = false,
+}: {
+  impacts: Impact[];
+  roleShift?: { from: string; to: string } | null;
+  compact?: boolean;
+}) {
+  if (!impacts.length && !roleShift) return null;
+  return (
+    <div className={`impacts${compact ? " compact" : ""}`}>
+      {roleShift && (
+        <div className="impact role">
+          <span className="impact-label">역할</span>
+          <span className="impact-move">
+            <b>{roleShift.from}</b>
+            <i>→</i>
+            <b className="to">{roleShift.to}</b>
+          </span>
+          <span className="impact-delta good">변경</span>
+        </div>
+      )}
+      {impacts.map((x) => (
+        <div className={`impact ${x.tone}`} key={x.key}>
+          <span className="impact-label">{x.label}</span>
+          <span className="impact-move">
+            <b>{x.before}</b>
+            <i>→</i>
+            <b className="to">{x.after}</b>
+          </span>
+          <span className={`impact-delta ${x.tone}`}>{x.delta}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** 지금 능력치로 한 시즌을 치르면 나올 예상 성적 */
+export function ProjectionLine({ stat }: { stat: StatLine }) {
+  const cells =
+    stat.kind === "batter"
+      ? [
+          { v: `${stat.g}`, l: "경기" },
+          { v: fmtAvg(stat.avg), l: "타율" },
+          { v: `${stat.hr}`, l: "홈런" },
+          { v: `${stat.rbi}`, l: "타점" },
+          { v: `${stat.sb}`, l: "도루" },
+          { v: `${stat.war}`, l: "WAR", hi: true },
+        ]
+      : [
+          { v: `${stat.g}`, l: "등판" },
+          { v: `${stat.w}-${stat.l}`, l: "승-패" },
+          { v: stat.era.toFixed(2), l: "ERA" },
+          { v: `${stat.so}`, l: "탈삼진" },
+          { v: `${Math.round(stat.ip)}`, l: "이닝" },
+          { v: `${stat.war}`, l: "WAR", hi: true },
+        ];
+  return (
+    <div className="statline">
+      {cells.map((c) => (
+        <div key={c.l} className={c.hi ? "hi" : ""}>
+          <b>{c.v}</b>
+          <small>{c.l}</small>
         </div>
       ))}
     </div>

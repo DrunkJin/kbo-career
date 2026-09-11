@@ -9,6 +9,7 @@ import { Bar, Rolling, TeamLogo, Toasts } from "./components/bits";
 import { LEAGUES, teamColor } from "./game/data";
 import { ATTR_DESC, ATTR_LABEL, potentialGrade, visibleKeys } from "./game/engine";
 import {
+  SPEED_LABEL,
   clearSave,
   initialState,
   loadGame,
@@ -124,9 +125,24 @@ export function App() {
             </button>
           ))}
         </nav>
-        <div className="clock">
-          <b>{p.year}</b>
-          <span>AGE {p.age}</span>
+        <div className="topbar-right">
+          <div className="speed" role="group" aria-label="진행 속도">
+            {(["normal", "fast", "turbo"] as const).map((sp) => (
+              <button
+                key={sp}
+                className={state.speed === sp ? "on" : ""}
+                onClick={() => dispatch({ type: "SET_SPEED", speed: sp })}
+                title={SPEED_LABEL[sp].desc}
+                aria-pressed={state.speed === sp}
+              >
+                {SPEED_LABEL[sp].name}
+              </button>
+            ))}
+          </div>
+          <div className="clock">
+            <b>{p.year}</b>
+            <span>AGE {p.age}</span>
+          </div>
         </div>
       </header>
 
@@ -229,8 +245,11 @@ export function App() {
               event={event}
               headline={state.headline}
               feed={state.feed}
+              impacts={state.impacts}
+              roleShift={state.roleShift}
               blocked={!!offers || !!result}
               onAdvance={() => dispatch({ type: "ADVANCE" })}
+              onFastForward={() => dispatch({ type: "FAST_FORWARD" })}
               onChoose={(choice) => dispatch({ type: "CHOOSE", choice })}
             />
           )}
@@ -242,7 +261,13 @@ export function App() {
       </div>
 
       {result && (
-        <SeasonResultModal result={result} player={p} onClose={() => dispatch({ type: "CLOSE_RESULT" })} />
+        <SeasonResultModal
+          result={result}
+          player={p}
+          impacts={state.impacts}
+          roleShift={state.roleShift}
+          onClose={() => dispatch({ type: "CLOSE_RESULT" })}
+        />
       )}
       {!result && offers && offers.length > 0 && (
         <OfferModal offers={offers} player={p} onAccept={(offer) => dispatch({ type: "ACCEPT", offer })} />

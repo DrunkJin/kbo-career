@@ -26,6 +26,14 @@ export const gauss = () =>
   (Math.random() + Math.random() + Math.random() + Math.random() - 2) * 1.05;
 export const r1 = (v: number) => Math.round(v * 10) / 10;
 
+/**
+ * 시즌 시뮬레이션이 쓰는 난수원.
+ * 실제 시즌은 무작위로, "예상 성적"은 평균값(운 중립)으로 같은 공식을 돌립니다.
+ */
+export type Rng = { u: () => number; g: () => number };
+const LIVE: Rng = { u: () => Math.random(), g: gauss };
+const MEAN: Rng = { u: () => 0.5, g: () => 0 };
+
 /* ─────────────────────── 능력치 / OVR ─────────────────────── */
 
 export const BATTER_KEYS: AttrKey[] = ["contact", "power", "eye", "speed", "defense"];
@@ -236,8 +244,8 @@ export function simulateSeason(s: PlayerState): SeasonResult {
   const pt = PLAY_TIME[role] * healthFactor * (s.injury ? clamp(1 - s.injury.severity, 0.25, 1) : 1);
 
   const stat: StatLine = isPitcher(s.position)
-    ? simPitcher(s, lg.games, role, edge, form, pt)
-    : simBatter(s, lg.games, edge, form, pt);
+    ? simPitcher(s, lg.games, role, edge, form, pt, LIVE)
+    : simBatter(s, lg.games, edge, form, pt, LIVE);
 
   // 팀 성적
   const info = teamInfo(s.contract.team);
@@ -289,10 +297,10 @@ export function simulateSeason(s: PlayerState): SeasonResult {
   };
 }
 
-function simBatter(s: PlayerState, games: number, edge: number, form: number, pt: number): BatterLine {
+function simBatter(s: PlayerState, games: number, edge: number, form: number, pt: number, rng: Rng): BatterLine {
   const a = s.attrs;
   const lvl = LEAGUES[s.contract.league].level;
-  const g = Math.round(games * pt * (0.9 + rand() * 0.12));
+  const g = Math.round(games * pt * (0.9 + rng.u() * 0.12));
   const pa = Math.max(40, Math.round(g * 4.25 * (pt > 0.8 ? 1 : 0.92)));
   const avg = clamp(
     0.252 + (a.contact - lvl) * 0.0034 + (a.eye - lvl) * 0.0011 + (a.speed - lvl) * 0.0006 + form * 0.019,
@@ -300,12 +308,12 @@ function simBatter(s: PlayerState, games: number, edge: number, form: number, pt
     0.395,
   );
   const hrRate = Math.max(0, (a.power - lvl) * 0.0022 + 0.021 + form * 0.004);
-  const hr = Math.round(pa * hrRate * (0.85 + rand() * 0.4));
+  const hr = Math.round(pa * hrRate * (0.85 + rng.u() * 0.4));
   const h = Math.round(pa * 0.9 * avg);
   const obp = clamp(avg + 0.052 + (a.eye - lvl) * 0.0021, 0.2, 0.48);
   const slg = clamp(avg + 0.128 + (a.power - lvl) * 0.0045 + hr / Math.max(pa, 1) * 1.4, 0.24, 0.79);
-  const sb = Math.max(0, Math.round((a.speed - 58) * 0.42 * pt + rand() * 4));
-  const rbi = Math.round(hr * 2.1 + h * 0.32 + rand() * 8);
+  const sb = Math.max(0, Math.round((a.speed - 58) * 0.42 * pt + rng.u() * 4));
+  const rbi = Math.round(hr * 2.1 + h * 0.32 + rng.u() * 8);
   // WAR은 "리그 평균 선수" 기준으로 계산합니다.
   // 능력치가 리그 레벨과 같으면 obp .304 / slg .380 이 나오므로 그 값이 기준선입니다.
   const off = (obp - 0.304) * 24 + (slg - 0.38) * 10;
@@ -316,22 +324,28 @@ function simBatter(s: PlayerState, games: number, edge: number, form: number, pt
   return { kind: "batter", g, pa, h, hr, rbi, sb, avg, obp, slg, war };
 }
 
-function simPitcher(s: PlayerState, games: number, role: Role, edge: number, form: number, pt: number): PitcherLine {
+function simPitcher(s: PlayerState, games: number, role: Role, edge: number, form: number, pt: number, rng: Rng): PitcherLine {
   const a = s.attrs;
   const starter = role === "선발";
-  const g = starter ? Math.round(30 * pt * (0.85 + rand() * 0.25)) : Math.round(62 * pt * (0.8 + rand() * 0.35));
+  const g = starter ? Math.round(30 * pt * (0.85 + rng.u() * 0.25)) : Math.round(62 * pt * (0.8 + rng.u() * 0.35));
   const ipPerG = starter ? clamp(4.6 + (a.stamina - 60) * 0.035, 3.4, 7.2) : role === "마무리" ? 1.05 : 1.4;
-  const ip = r1(Math.max(8, g * ipPerG * (0.92 + rand() * 0.16)));
+  const ip = r1(Math.max(8, g * ipPerG * (0.92 + rng.u() * 0.16)));
   const era = clamp(4.35 - edge * 0.115 - form * 0.42 - (a.control - 60) * 0.012, 1.42, 8.2);
   const whip = clamp(1.36 - edge * 0.011 - form * 0.05 - (a.control - 60) * 0.0035, 0.78, 2.1);
   const k9 = clamp(6.4 + (a.velocity - 60) * 0.072 + (a.movement - 60) * 0.058, 3.5, 14);
   const so = Math.round((ip * k9) / 9);
   const info = teamInfo(s.contract.team);
   const support = ((info?.power ?? 5) - 5) * 0.02;
+  // 선발은 등판의 약 62%에서만 승패가 갈리고, 그중 승리 지분을 ERA와 팀 전력이 정합니다.
+  // (이전 공식은 평균 ERA 로도 28선발 17승이 나올 만큼 후했습니다)
+  const decisionRate = 0.62;
+  const winShare = clamp(0.5 - (era - 4.35) * 0.07 + support, 0.18, 0.82);
   const w = starter
-    ? Math.max(0, Math.round(g * clamp(0.62 - (era - 3.4) * 0.09 + support, 0.08, 0.72)))
+    ? Math.max(0, Math.round(g * decisionRate * winShare))
     : Math.round(g * 0.06);
-  const l = starter ? Math.max(0, Math.round(g * clamp(0.2 + (era - 3.4) * 0.07, 0.05, 0.55))) : Math.round(g * 0.05);
+  const l = starter
+    ? Math.max(0, Math.round(g * decisionRate * (1 - winShare)))
+    : Math.round(g * 0.05);
   const sv = role === "마무리" ? Math.max(0, Math.round(g * clamp(0.62 - (era - 3) * 0.08, 0.1, 0.72))) : 0;
   // 리그 평균 ERA(4.35) 대비 방어 실점 + 대체선수 보정
   const war = r1(clamp((4.35 - era) * (ip / 9) * 0.22 + (ip / 180) * 1.8, -1.5, 11));
@@ -832,4 +846,122 @@ export function leagueBreakdown(seasons: SeasonRecord[]) {
   return [...map.entries()]
     .sort((a, b) => LEAGUES[b[0]].tier - LEAGUES[a[0]].tier)
     .map(([league, v]) => ({ league, ...v, teams: [...v.teams] }));
+}
+
+/* ─────────────────── 예상 성적 (운 중립) ─────────────────── */
+
+/**
+ * 지금 능력치 그대로 한 시즌을 치르면 나올 "평균적인" 성적.
+ * 실제 시즌과 완전히 같은 공식을 쓰되 난수만 평균값으로 고정합니다.
+ * 능력치 +1 이 성적으로 얼마나 이어지는지 보여주는 데 씁니다.
+ */
+export function projectSeason(s: PlayerState): StatLine {
+  const lg = LEAGUES[s.contract.league];
+  const role = roleFor(s);
+  const edge = s.ovr - lg.level;
+  // 기복(gauss)만 제거하고 멘탈·특성 보정은 남깁니다
+  const form = (s.morale - 60) / 90 + (s.traits.includes("클러치") ? 0.25 : 0);
+  const healthFactor = clamp(s.health / 95, 0.55, 1.05);
+  const pt = PLAY_TIME[role] * healthFactor * (s.injury ? clamp(1 - s.injury.severity, 0.25, 1) : 1);
+  return isPitcher(s.position)
+    ? simPitcher(s, lg.games, role, edge, form, pt, MEAN)
+    : simBatter(s, lg.games, edge, form, pt, MEAN);
+}
+
+/** 이번 시즌 부상을 당할 확률 */
+export function injuryRisk(s: PlayerState) {
+  return clamp(
+    0.05 +
+      (75 - s.attrs.durability) * 0.0022 +
+      (95 - s.health) * 0.0016 +
+      Math.max(0, s.age - 31) * 0.012 +
+      (s.traits.includes("유리몸") ? 0.06 : 0),
+    0.03,
+    0.42,
+  );
+}
+
+export type Impact = {
+  key: string;
+  label: string;
+  before: string;
+  after: string;
+  /** 표시용 증감 문자열 */
+  delta: string;
+  tone: "good" | "bad";
+};
+
+const fmtEra = (v: number) => v.toFixed(2);
+const signed = (v: number, digits = 0) =>
+  `${v > 0 ? "+" : "−"}${Math.abs(v).toFixed(digits)}`;
+/** 타율처럼 앞의 0을 떼는 지표의 증감 (.006 형태) */
+const signedAvg = (v: number) =>
+  `${v > 0 ? "+" : "−"}${Math.abs(v).toFixed(3).replace(/^0/, "")}`;
+
+/**
+ * 능력치 변화를 "그래서 성적이 어떻게 달라지는가"로 번역합니다.
+ * 숫자가 실제로 눈에 띄게 바뀐 항목만 돌려줍니다.
+ */
+export function projectImpact(before: PlayerState, after: PlayerState): Impact[] {
+  const a = projectSeason(before);
+  const b = projectSeason(after);
+  const out: Impact[] = [];
+  const push = (
+    key: string,
+    label: string,
+    x: number,
+    y: number,
+    fmt: (v: number) => string,
+    fmtDelta: (v: number) => string,
+    minDiff: number,
+    /** 값이 내려가는 것이 좋은 지표(ERA 등) */
+    lowerIsBetter = false,
+  ) => {
+    const diff = y - x;
+    if (Math.abs(diff) < minDiff) return;
+    out.push({
+      key,
+      label,
+      before: fmt(x),
+      after: fmt(y),
+      delta: fmtDelta(diff),
+      tone: (lowerIsBetter ? diff < 0 : diff > 0) ? "good" : "bad",
+    });
+  };
+
+  if (a.kind === "batter" && b.kind === "batter") {
+    push("avg", "타율", a.avg, b.avg, fmtAvg, signedAvg, 0.001);
+    push("hr", "홈런", a.hr, b.hr, (v) => `${Math.round(v)}`, (v) => signed(v), 1);
+    push("rbi", "타점", a.rbi, b.rbi, (v) => `${Math.round(v)}`, (v) => signed(v), 2);
+    push("sb", "도루", a.sb, b.sb, (v) => `${Math.round(v)}`, (v) => signed(v), 1);
+    push("g", "출장", a.g, b.g, (v) => `${Math.round(v)}경기`, (v) => signed(v), 4);
+  } else if (a.kind === "pitcher" && b.kind === "pitcher") {
+    push("era", "평균자책점", a.era, b.era, fmtEra, (v) => signed(v, 2), 0.02, true);
+    push("so", "탈삼진", a.so, b.so, (v) => `${Math.round(v)}`, (v) => signed(v), 2);
+    push("ip", "이닝", a.ip, b.ip, (v) => `${Math.round(v)}`, (v) => signed(v), 5);
+    push("w", "승", a.w, b.w, (v) => `${Math.round(v)}`, (v) => signed(v), 1);
+  }
+  push("war", "예상 WAR", a.war, b.war, (v) => v.toFixed(1), (v) => signed(v, 1), 0.05);
+
+  // 표시값과 증감이 어긋나지 않도록 반올림한 뒤 비교합니다
+  const riskA = Math.round(injuryRisk(before) * 100);
+  const riskB = Math.round(injuryRisk(after) * 100);
+  push("injury", "부상 위험", riskA, riskB, (v) => `${v}%`, (v) => `${signed(v)}%p`, 1, true);
+  return out;
+}
+
+/** 역할 변화 (백업 → 주전처럼 체감이 큰 변화) */
+export function roleChange(before: PlayerState, after: PlayerState) {
+  const x = roleFor(before);
+  const y = roleFor(after);
+  return x === y ? null : { from: x, to: y };
+}
+
+/** 능력치 한 항목이 지금 어떤 수준인지 한 줄로 */
+export function attrContext(s: PlayerState, k: AttrKey): string {
+  const lvl = LEAGUES[s.contract.league].level;
+  const gap = s.attrs[k] - lvl;
+  const tier =
+    gap >= 12 ? "리그 최상위" : gap >= 5 ? "리그 상위" : gap >= -3 ? "리그 평균" : gap >= -10 ? "리그 하위" : "많이 부족";
+  return tier;
 }

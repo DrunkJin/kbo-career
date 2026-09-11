@@ -1,4 +1,7 @@
-import { LEAGUES } from "./data";
+import { LEAGUES, stripFarm } from "./data";
+import { CAREER_EVENTS } from "./events-career";
+import { POSITION_EVENTS } from "./events-position";
+import { TEAM_EVENTS } from "./events-team";
 import { rand, tournamentFor } from "./engine";
 import type { Choice, GameEvent, PlayerState } from "./types";
 
@@ -14,7 +17,7 @@ const sure = (
   effect: Choice["outcomes"][number]["effect"],
 ): Choice => ({ label, hint, risk, outcomes: [{ weight: 1, effect }] });
 
-export const EVENTS: GameEvent[] = [
+const BASE_EVENTS: GameEvent[] = [
   /* ──────────────── 스프링캠프 (phase 0) ──────────────── */
   {
     id: "camp-focus",
@@ -626,16 +629,48 @@ export const EVENTS: GameEvent[] = [
   },
 ];
 
-/** 현재 상태에서 발생 가능한 이벤트 중 하나를 뽑습니다. */
+/** 기본 + 연차별 + 포지션별 + 구단별 이벤트 전체 */
+export const EVENTS: GameEvent[] = [
+  ...BASE_EVENTS,
+  ...CAREER_EVENTS,
+  ...POSITION_EVENTS,
+  ...TEAM_EVENTS,
+];
+
+/** 이 이벤트가 지금 이 선수에게 등장할 수 있는가 */
+export function eventFits(e: GameEvent, s: PlayerState, phase: number, usedIds: string[]) {
+  if (!e.phases.includes(phase as never)) return false;
+  if (!e.repeatable && usedIds.includes(e.id)) return false;
+  if (e.positions && !e.positions.includes(s.position)) return false;
+  if (e.leagues && !e.leagues.includes(s.contract.league)) return false;
+  if (e.teams && !e.teams.includes(stripFarm(s.contract.team))) return false;
+  const yearNo = s.seasons.length + 1; // 프로 1년차부터
+  if (e.minSeason !== undefined && yearNo < e.minSeason) return false;
+  if (e.maxSeason !== undefined && yearNo > e.maxSeason) return false;
+  if (e.when && !e.when(s)) return false;
+  return true;
+}
+
+/**
+ * 현재 상태에서 발생 가능한 이벤트 중 하나를 뽑습니다.
+ * 조건이 구체적인 이벤트(포지션·구단·연차 지정)일수록 가중치를 올려,
+ * 범용 이벤트에 묻히지 않고 자주 등장하게 합니다.
+ */
 export function drawEvent(s: PlayerState, phase: number, usedIds: string[]): GameEvent | null {
-  const pool = EVENTS.filter(
-    (e) => e.phases.includes(phase as never) && (!e.when || e.when(s)) && !usedIds.includes(e.id),
-  );
+  const pool = EVENTS.filter((e) => eventFits(e, s, phase, usedIds));
   if (!pool.length) return null;
-  const total = pool.reduce((a, e) => a + (e.weight ?? 1), 0);
+  const weightOf = (e: GameEvent) => {
+    let w = e.weight ?? 1;
+    if (e.teams) w *= 2.6;
+    else if (e.positions) w *= 1.9;
+    else if (e.minSeason !== undefined || e.maxSeason !== undefined) w *= 1.5;
+    else if (e.leagues) w *= 1.4;
+    return w;
+  };
+  const total = pool.reduce((a, e) => a + weightOf(e), 0);
   let r = rand(total);
   for (const e of pool) {
-    r -= e.weight ?? 1;
+    r -= weightOf(e);
     if (r <= 0) return e;
   }
   return pool[0];

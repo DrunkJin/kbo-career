@@ -90,17 +90,20 @@ type Row = {
   reachedTop: boolean;
 };
 
+const SPEED = (process.argv[4] as any) ?? "normal";
 const rows: Row[] = [];
 let stuck = 0;
+let eventsSeen = 0;
+const eventIds = new Set<string>();
 /** "KBO→MLB" 형태의 리그 전환 횟수 */
 const transitions = new Map<string, number>();
 
 for (let i = 0; i < RUNS; i++) {
-  let s: GameState = reducer(initialState(), {
-    type: "START",
-    name: "테스트",
-    position: POS,
-  });
+  let s: GameState = reducer(
+    reducer(initialState(), { type: "SET_SPEED", speed: SPEED }),
+    { type: "START", name: "테스트", position: POS },
+  );
+  s = reducer(s, { type: "SET_SPEED", speed: SPEED });
   let guard = 0;
   while (s.screen === "play" && guard++ < 4000) {
     if (s.result) {
@@ -116,7 +119,11 @@ for (let i = 0; i < RUNS; i++) {
       continue;
     }
     if (s.event) {
-      s = reducer(s, { type: "CHOOSE", choice: s.event.choices[0] });
+      eventsSeen++;
+      eventIds.add(s.event.id);
+      // 스피드 모드의 자동 처리와 같은 기준으로 비교하기 위해 무작위로 고릅니다
+      const pickIdx = Math.floor(Math.random() * s.event.choices.length);
+      s = reducer(s, { type: "CHOOSE", choice: s.event.choices[pickIdx] });
       continue;
     }
     s = reducer(s, { type: "ADVANCE" });
@@ -159,7 +166,7 @@ const q = (xs: number[], p: number) => {
 const wars = rows.map((r) => r.war);
 const seasons = rows.map((r) => r.seasons);
 
-console.log(`\n=== ${RUNS}회 · ${POS} ===`);
+console.log(`\n=== ${RUNS}회 · ${POS} · 속도 ${SPEED} ===`);
 console.log(`무한루프 의심: ${stuck}`);
 console.log(`평균 시즌 수 ${num(seasons).toFixed(1)} (중앙 ${q(seasons, 0.5)}, 최대 ${Math.max(...seasons)})`);
 console.log(`은퇴 나이 평균 ${num(rows.map((r) => r.retireAge)).toFixed(1)}`);
@@ -170,6 +177,12 @@ console.log(`국제대회 출전 평균 ${num(rows.map((r) => r.intl)).toFixed(2
 console.log(`통산 수입 중앙 ${q(rows.map((r) => r.earnings), 0.5).toFixed(1)}억 · 상위10% ${q(rows.map((r) => r.earnings), 0.9).toFixed(1)}억`);
 console.log(`HOF 점수 중앙 ${q(rows.map((r) => r.hof), 0.5)} · 상위10% ${q(rows.map((r) => r.hof), 0.9)}`);
 console.log(`1군(티어3+) 도달 ${pct(rows.filter((r) => r.reachedTop).length)} · MLB 도달 ${pct(rows.filter((r) => r.reachedMLB).length)}`);
+
+console.log(
+  `이벤트: 커리어당 ${(eventsSeen / RUNS).toFixed(1)}회 · 시즌당 ${(
+    eventsSeen / rows.reduce((a, r) => a + r.seasons, 0)
+  ).toFixed(2)}회 · 종류 ${eventIds.size}종 (직접 고른 것만)`,
+);
 
 console.log("\n리그 전환 (전체 커리어 합산):");
 console.log(
