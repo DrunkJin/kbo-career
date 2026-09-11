@@ -8,3 +8,6 @@ dist/
 
 # 검증 스크립트 빌드 산출물
 .*.cjs
+test-results/
+playwright-report/
+artifacts/

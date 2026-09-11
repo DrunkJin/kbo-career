@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Modal } from "./Modal";
 
 const STEPS = [
   {
@@ -32,7 +33,7 @@ const STEPS = [
     eyebrow: "4 / 4 · 목표",
     title: "‘다음 목표’를 따라가면 됩니다",
     body: "화면 상단에 지금 단계에서 노려야 할 목표가 항상 표시됩니다. 퓨처스에서 1군 콜업, 1군에서 주전, 그다음 해외 진출과 우승 반지. 계약이 끝나면 오퍼가 오고, 은퇴하면 커리어 리포트를 받습니다.",
-    goal: "퓨처스 지배 후 1군 콜업 (OVR 57 필요)",
+    goal: "퓨처스에서 성장 → OVR 64부터 계약 협상 시 1군 콜업 대상",
   },
 ];
 
@@ -41,7 +42,7 @@ export function Guide({ onClose }: { onClose: () => void }) {
   const s = STEPS[i];
   const last = i === STEPS.length - 1;
   return (
-    <div className="modal" role="dialog" aria-modal="true" aria-label="게임 안내">
+    <Modal label="게임 안내" onClose={onClose}>
       <div className="sheet guide">
         <span className="eyebrow">{s.eyebrow}</span>
         <h2>{s.title}</h2>
@@ -87,6 +88,6 @@ export function Guide({ onClose }: { onClose: () => void }) {
           </div>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }

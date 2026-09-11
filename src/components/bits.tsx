@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useId, useRef, useState } from "react";
 import { LEAGUES, teamColor, teamLogo } from "../game/data";
 import { TERMS } from "../game/describe";
 import { fmtAvg, type Impact } from "../game/engine";
@@ -41,11 +41,25 @@ export function TeamLogo({
 /** 용어에 설명 툴팁을 붙입니다. TERMS 에 없는 단어는 그냥 출력합니다. */
 export function Term({ k, children }: { k: string; children?: React.ReactNode }) {
   const d = TERMS[k];
+  const id = useId();
+  const [open, setOpen] = useState(false);
+  const wrap = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const dismiss = (e: PointerEvent) => { if (!wrap.current?.contains(e.target as Node)) setOpen(false); };
+    document.addEventListener("pointerdown", dismiss);
+    return () => document.removeEventListener("pointerdown", dismiss);
+  }, [open]);
   if (!d) return <>{children ?? k}</>;
   return (
-    <abbr className="term" title={d} tabIndex={0}>
-      {children ?? k}
-    </abbr>
+    <span className="term-wrap" ref={wrap}>
+      <button type="button" className="term" title={d} aria-expanded={open} aria-describedby={open ? id : undefined}
+        onClick={() => setOpen(!open)} onKeyDown={e => { if (e.key === "Escape") { e.stopPropagation(); setOpen(false); } }}
+        onBlur={e => { if (!wrap.current?.contains(e.relatedTarget as Node)) setOpen(false); }}>
+        {children ?? k}
+      </button>
+      {open && <span className="term-help" id={id} role="tooltip">{d}</span>}
+    </span>
   );
 }
 

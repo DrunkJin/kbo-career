@@ -49,7 +49,7 @@ export function App() {
   const tabs = isMobile ? MOBILE_TABS : TABS;
   const showSide = !isMobile || tab === "player";
   const mainTab: Tab = tab === "player" ? "career" : tab;
-  const [savedGame] = useState(() => loadGame());
+  const [savedGame, setSavedGame] = useState(() => loadGame());
   const [toasts, setToasts] = useState<
     { id: number; label: string; value: number; until: number }[]
   >([]);
@@ -108,7 +108,7 @@ export function App() {
     if (screen !== "play") return;
     const onKey = (e: KeyboardEvent) => {
       const el = e.target as HTMLElement | null;
-      if (el && /INPUT|TEXTAREA/.test(el.tagName)) return;
+      if (el?.closest('button, a, input, textarea, select, summary, [role="dialog"], [contenteditable="true"]')) return;
       if (e.code !== "Space" && e.code !== "Enter") return;
       e.preventDefault(); // 이벤트 대기 중에도 스페이스로 페이지가 스크롤되지 않도록
       if (guide) return;
@@ -139,6 +139,7 @@ export function App() {
         reason={state.retireReason}
         onRestart={() => {
           clearSave();
+          setSavedGame(null);
           dispatch({ type: "RESET" });
         }}
       />
@@ -152,7 +153,7 @@ export function App() {
         </span>
         <nav>
           {tabs.map(([id, label]) => (
-            <button key={id} className={tab === id ? "on" : ""} onClick={() => setTab(id)}>
+            <button key={id} className={tab === id ? "on" : ""} aria-current={tab === id ? "page" : undefined} onClick={() => setTab(id)}>
               {label}
               {id === "market" && offers?.length ? ` (${offers.length})` : ""}
             </button>
@@ -280,6 +281,7 @@ export function App() {
               onClick={() => {
                 if (confirm("현재 커리어를 삭제하고 새로 시작할까요?")) {
                   clearSave();
+                  setSavedGame(null);
                   dispatch({ type: "RESET" });
                 }
               }}

@@ -2,6 +2,8 @@ import { LEAGUES } from "../game/data";
 import { fmtSalary, isFaEligible, marketValue } from "../game/engine";
 import type { Offer, PlayerState } from "../game/types";
 import { LeagueBadge, TeamLogo } from "./bits";
+import { Modal } from "./Modal";
+import { OverseasMoment } from "./CareerMoment";
 
 export function OfferCard({ offer, onAccept }: { offer: Offer; onAccept: (o: Offer) => void }) {
   const lg = LEAGUES[offer.league];
@@ -49,7 +51,7 @@ export function OfferModal({
   player: PlayerState;
 }) {
   return (
-    <div className="modal" role="dialog" aria-modal="true">
+    <Modal label="다음 시즌 계약 선택">
       <div className="sheet" style={{ width: "min(940px, 100%)" }}>
         <div className="sheet-head">
           <div>
@@ -61,13 +63,14 @@ export function OfferModal({
             </p>
           </div>
         </div>
+        {offers.some(o => o.kind === "해외진출") && <OverseasMoment />}
         <div className="offer-grid">
           {offers.map((o) => (
             <OfferCard key={`${o.team}-${o.league}-${o.label}`} offer={o} onAccept={onAccept} />
           ))}
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }
 
@@ -124,10 +127,10 @@ export function MarketTab({ p, offers, onAccept }: { p: PlayerState; offers: Off
         <header><h3>승격 루트</h3></header>
         <div className="medal-row">
           {[
-            { t: "KBO 퓨처스 → KBO 1군", d: "퓨처스 평균(52)을 5 이상 넘기면 콜업 제안" },
+            { t: "KBO 퓨처스 → KBO 1군", d: "OVR 64 이상 · 계약 협상 시 콜업 대상" },
             { t: "KBO → NPB / MLB 포스팅", d: "OVR 74+ · 직전 WAR 3.5+ (MLB는 78+)" },
             { t: "NPB → MLB", d: "OVR 78+ · 직전 WAR 4+" },
-            { t: "AA → AAA → MLB", d: "각 리그 평균 -4 이내면 승격 대상" },
+            { t: "AA → AAA → MLB", d: "AAA는 OVR 66 이상 · MLB는 78 이상 · 계약 협상 시" },
           ].map((x) => (
             <article key={x.t}>
               <span className="medal none">↑</span>

@@ -2,6 +2,8 @@ import { ATTR_LABEL, fmtAvg, type Impact, type SeasonResult as SR } from "../gam
 import type { AttrKey, PlayerState } from "../game/types";
 import { seasonGrade } from "../game/describe";
 import { ImpactList, LeagueBadge, TeamLogo, Term } from "./bits";
+import { Modal } from "./Modal";
+import { CareerMoment } from "./CareerMoment";
 
 export function SeasonResultModal({
   result,
@@ -22,7 +24,7 @@ export function SeasonResultModal({
   const grade = seasonGrade(s.war, s.g);
 
   return (
-    <div className="modal" role="dialog" aria-modal="true">
+    <Modal label="시즌 결산" onClose={onClose}>
       <div className="sheet">
         <div className="sheet-head">
           <div>
@@ -39,6 +41,7 @@ export function SeasonResultModal({
           </div>
         </div>
 
+        <CareerMoment player={player} result={result} />
         <div className="statline">
           {s.kind === "batter" ? (
             <>
@@ -117,6 +120,6 @@ export function SeasonResultModal({
           오프시즌으로 →
         </button>
       </div>
-    </div>
+    </Modal>
   );
 }

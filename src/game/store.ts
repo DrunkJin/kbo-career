@@ -18,7 +18,7 @@ import {
   type Impact,
   type SeasonResult,
 } from "./engine";
-import { drawEvent, rollOutcome } from "./events";
+import { EVENTS, drawEvent, rollOutcome } from "./events";
 import type {
   AttrKey,
   Attrs,
@@ -111,9 +111,9 @@ export function eventPhases(speed: Speed): number[] {
 }
 
 export const SPEED_LABEL: Record<Speed, { name: string; desc: string }> = {
-  normal: { name: "기본", desc: "시즌당 이벤트 3회" },
-  fast: { name: "빠르게", desc: "시즌당 이벤트 2회" },
-  turbo: { name: "초고속", desc: "시즌당 이벤트 1회" },
+  normal: { name: "기본", desc: "직접 선택 약 4회" },
+  fast: { name: "빠르게", desc: "직접 선택 약 3회" },
+  turbo: { name: "초고속", desc: "직접 선택 약 2회" },
 };
 
 /* ─────────────────── 효과 적용 ─────────────────── */
@@ -142,7 +142,8 @@ function applyEffect(p: PlayerState, e: Effect): { player: PlayerState; deltas: 
     const core = allowed.filter((k) => k !== "mental" && k !== "durability");
     const sorted = [...core].sort((a, b) => attrs[b] - attrs[a]);
     const targets = e.focus === "strength" ? sorted.slice(0, 2) : sorted.slice(-2);
-    targets.forEach((k) => bump(k, e.focus === "strength" ? 3 : 4));
+    const gain = e.focus === "strength" ? 3 : 4;
+    targets.forEach((k) => bump(k, isPitcher(p.position) ? gain - 1 : gain));
   }
 
   const player: PlayerState = {
@@ -489,7 +490,7 @@ export function saveGame(s: GameState) {
   try {
     localStorage.setItem(
       KEY,
-      JSON.stringify({ ...s, event: null, result: null, impacts: [], roleShift: null }),
+      JSON.stringify({ ...s, event: s.event ? { id: s.event.id, title: s.event.title, body: s.event.body } : null, impacts: [], roleShift: null }),
     );
   } catch {
     /* 저장 실패는 무시 */
@@ -502,12 +503,13 @@ export function loadGame(): GameState | null {
     if (!raw) return null;
     const parsed = JSON.parse(raw) as GameState;
     if (!parsed?.player?.attrs) return null;
+    const eventTemplate = parsed.event && EVENTS.find((e) => e.id === parsed.event?.id);
     return {
       ...parsed,
       eventHistory: parsed.eventHistory ?? [],
       seenEvents: parsed.seenEvents ?? [],
-      event: null,
-      result: null,
+      event: eventTemplate ? { ...eventTemplate, title: parsed.event!.title ?? eventTemplate.title, body: parsed.event!.body ?? eventTemplate.body } : null,
+      result: parsed.result ?? null,
       deltas: [],
       impacts: [],
       roleShift: null,
@@ -531,7 +533,11 @@ export function clearSave() {
 export function nextGoal(p: PlayerState) {
   const lg = LEAGUES[p.contract.league];
   const edge = p.ovr - lg.level;
-  if (lg.tier <= 2) return `${lg.short} 지배 후 1군 콜업 (OVR ${lg.level + 5} 필요)`;
+  const promotion = { KBO_F: ["KBO", 64], NPB_F: ["NPB", 70], AA: ["AAA", 66], AAA: ["MLB", 78] } as const;
+  if (p.contract.league in promotion) {
+    const [target, threshold] = promotion[p.contract.league as keyof typeof promotion];
+    return `${target} 콜업 준비 · OVR ${threshold}부터 계약 협상 시 대상`;
+  }
   if (edge < -4) return "로스터 생존 — 백업에서 벗어나기";
   if (edge < 3) return "주전 굳히기 · 풀타임 소화";
   if (lg.id === "KBO") return "포스팅 자격 확보 (OVR 78 · WAR 3.5+)";

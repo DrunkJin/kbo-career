@@ -1,3 +1,5 @@
+import { narrateSeason } from "./season-narrative";
+export { narrateSeason } from "./season-narrative";
 import { ALL_TEAMS, KBO_TEAMS, LEAGUES, MLB_TEAMS, NPB_TEAMS, teamInfo, type TeamInfo } from "./data";
 import type {
   AttrKey,
@@ -77,6 +79,7 @@ const WEIGHTS: Record<Position, Partial<Record<AttrKey, number>>> = {
 };
 
 export const isPitcher = (p: Position) => p === "투수";
+export const isMajorLeague = (league: LeagueId) => league === "KBO" || league === "NPB" || league === "MLB";
 
 /** 포지션에서 화면에 보여줄 능력치 키 */
 export const visibleKeys = (p: Position): AttrKey[] =>
@@ -239,7 +242,7 @@ export function simulateSeason(s: PlayerState): SeasonResult {
   const lg = LEAGUES[s.contract.league];
   const role = roleFor(s);
   const edge = s.ovr - lg.level;
-  const form = gauss() + (s.morale - 60) / 90 + (s.traits.includes("클러치") ? 0.25 : 0);
+  const form = gauss() * clamp(1.35 - s.attrs.mental / 100, 0.4, 1.1) + (s.morale - 60) / 90 + (s.traits.includes("클러치") ? 0.25 : 0);
   const healthFactor = clamp(s.health / 95, 0.55, 1.05);
   const pt = PLAY_TIME[role] * healthFactor * (s.injury ? clamp(1 - s.injury.severity, 0.25, 1) : 1);
 
@@ -259,7 +262,7 @@ export function simulateSeason(s: PlayerState): SeasonResult {
     teamsInLeague,
   );
   const playoffCut = lg.id === "MLB" ? 6 : 5;
-  const madePlayoff = teamRank <= playoffCut && lg.tier >= 3;
+  const madePlayoff = teamRank <= playoffCut && isMajorLeague(lg.id);
   const champion = madePlayoff && teamRank <= 3 && rand() < 0.32;
   const teamResult = lg.tier < 3
     ? `${teamRank}위 (${teamWins}승)`
@@ -293,7 +296,7 @@ export function simulateSeason(s: PlayerState): SeasonResult {
   return {
     stat, role, awards, teamWins, teamRank, teamResult, champion,
     grew, declined, injury,
-    narrative: narrate(s, stat, awards, injury, champion),
+    narrative: narrateSeason(s, stat, awards, injury, champion, role),
   };
 }
 
@@ -348,7 +351,7 @@ function simPitcher(s: PlayerState, games: number, role: Role, edge: number, for
     : Math.round(g * 0.05);
   const sv = role === "마무리" ? Math.max(0, Math.round(g * clamp(0.62 - (era - 3) * 0.08, 0.1, 0.72))) : 0;
   // 리그 평균 ERA(4.35) 대비 방어 실점 + 대체선수 보정
-  const war = r1(clamp((4.35 - era) * (ip / 9) * 0.22 + (ip / 180) * 1.8, -1.5, 11));
+  const war = r1(clamp((4.35 - era) * (ip / 9) * 0.14 + (ip / 180) * 1.8, -1.5, 11));
   return { kind: "pitcher", g, ip, w, l, sv, so, era: Math.round(era * 100) / 100, whip: Math.round(whip * 100) / 100, war };
 }
 
@@ -358,8 +361,8 @@ function judgeAwards(s: PlayerState, stat: StatLine, league: LeagueId, champion:
   const lg = LEAGUES[league];
   const out: string[] = [];
   const tag = `${s.year} ${lg.short}`;
-  const top = lg.tier >= 3;
-  if (s.seasons.length === 0 && top && stat.war >= 2.2) out.push(`${tag} 신인왕`);
+  const top = isMajorLeague(league);
+  if (!s.seasons.some(r => isMajorLeague(r.league)) && top && stat.war >= 2.2) out.push(`${tag} 신인왕`);
   // 1군 무대(tier 3+)가 아니면 타이틀·올스타는 주어지지 않습니다
   if (stat.kind === "batter") {
     if (top && stat.war >= 6.5) out.push(`${tag} MVP`);
@@ -411,7 +414,8 @@ function progress(s: PlayerState, stat: StatLine) {
     curve >= 0
       ? curve * (1 + room) + perf * 0.5 + care + talentBonus
       : curve * 1.9 - Math.max(0, -perf) * 0.6;
-  let points = Math.round(raw);
+  // 핵심 능력치가 적은 투수의 포인트당 OVR 상승 폭을 보정합니다.
+  let points = Math.round(raw * (isPitcher(s.position) && raw > 0 ? 0.8 : 1));
   const declined = points < 0;
 
   const declineOrder: AttrKey[] = isPitcher(s.position)
@@ -421,7 +425,7 @@ function progress(s: PlayerState, stat: StatLine) {
   if (points >= 0) {
     for (let i = 0; i < points; i++) {
       const cap = clamp(s.potential, 40, 99);
-      const k = pick(keys.filter((x) => s.attrs[x] < cap));
+      const k = pick(keys.filter((x) => s.attrs[x] + (grew[x] ?? 0) < cap));
       if (!k) break;
       grew[k] = (grew[k] ?? 0) + 1;
     }
@@ -434,22 +438,6 @@ function progress(s: PlayerState, stat: StatLine) {
   return { grew, declined };
 }
 
-function narrate(
-  s: PlayerState,
-  stat: StatLine,
-  awards: string[],
-  injury: PlayerState["injury"],
-  champion: boolean,
-) {
-  if (champion) return `${s.year}년, 당신은 우승의 순간을 그라운드 위에서 맞았습니다.`;
-  if (awards.some((a) => a.includes("MVP"))) return `리그가 인정했습니다. ${s.year} 시즌의 주인공은 ${s.name}입니다.`;
-  if (injury?.severity === 1) return `시즌 도중 ${injury.name}. 수술대에 오릅니다. 돌아오는 길은 길고 험합니다.`;
-  if (injury) return `${injury.name}으로 이탈이 있었지만 시즌은 마쳤습니다.`;
-  if (stat.war >= 4) return "스카우트들의 수첩에 당신의 이름이 적히기 시작했습니다.";
-  if (stat.war >= 1.5) return "무난한 한 해. 다음 시즌이 진짜 승부처입니다.";
-  if (stat.war >= 0) return "존재감을 남기지 못한 시즌. 자리를 지키는 것조차 쉽지 않습니다.";
-  return "냉정한 평가가 돌아왔습니다. 다음 시즌 로스터를 장담할 수 없습니다.";
-}
 
 /* ─────────────────────── 계약 / 이적 ─────────────────────── */
 
@@ -773,7 +761,7 @@ export function tallyAwards(awards: string[], rings: number): AwardTally {
   const has = (kw: string) => awards.filter((a) => a.includes(kw)).length;
   return {
     mvp: has("MVP"),
-    goldenGlove: has("골든글러브") + has("사이영"),
+    goldenGlove: awards.filter((a) => a.includes("골든글러브") || a.includes("사이영")).length,
     rookie: has("신인왕"),
     allStar: has("올스타"),
     titles:
@@ -796,7 +784,7 @@ export function hofScore(s: PlayerState) {
     0,
   );
   const t = tallyAwards(s.awards, s.rings);
-  const topTierSeasons = s.seasons.filter((x) => LEAGUES[x.league].tier >= 3).length;
+  const topTierSeasons = s.seasons.filter((x) => isMajorLeague(x.league)).length;
   const mlbSeasons = s.seasons.filter((x) => x.league === "MLB").length;
   const npbSeasons = s.seasons.filter((x) => x.league === "NPB").length;
   const medals = s.intl.filter((x) => x.medal).length;

@@ -1,10 +1,11 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { LEAGUES } from "../game/data";
 import { fmtAvg, fmtSalary, projectSeason, roleFor, type Impact } from "../game/engine";
 import { PHASE_NAMES, nextGoal, type FeedItem } from "../game/store";
 import type { Choice, GameEvent, PlayerState } from "../game/types";
 import { RISK_DESC, describeChoice } from "../game/describe";
 import { ImpactList, LeagueBadge, ProjectionLine, TeamLogo, Term } from "./bits";
+import { OverseasMoment } from "./CareerMoment";
 
 const PHASE_SUB = ["훈련 방침", "슬럼프 · 사건", "데드라인", "성적 집계", "계약 · 휴식"];
 
@@ -36,6 +37,16 @@ export function Career({
   const role = roleFor(p);
   const projection = useMemo(() => projectSeason(p), [p]);
   const showImpacts = !event && (impacts.length > 0 || !!roleShift);
+  const moment = useRef<HTMLDivElement>(null);
+  const priorEvent = useRef<string | null>(null);
+  useEffect(() => {
+    if (event || priorEvent.current) {
+      const target = event ? document.getElementById("event-title") : moment.current;
+      target?.focus({ preventScroll: true });
+      target?.scrollIntoView({ block: "start", behavior: "instant" });
+    }
+    priorEvent.current = event?.id ?? null;
+  }, [event?.id]);
 
   return (
     <>
@@ -48,12 +59,12 @@ export function Career({
         ))}
       </div>
 
-      <div className="headline">
+      <div className="headline" ref={moment} tabIndex={-1}>
         <div>
           <span className="status">
             {event ? "선택 대기 중" : blocked ? "결정 필요" : `${p.year} · ${PHASE_NAMES[p.phase]}`}
           </span>
-          <h2>
+          <h2 aria-live="polite">
             {event
               ? "선택의 순간입니다"
               : p.phase === 3
@@ -99,6 +110,7 @@ export function Career({
         )}
       </div>
 
+      {!event && !blocked && feed[0]?.tag === "계약" && /포스팅|MLB 도전/.test(p.contract.label) && <OverseasMoment signed />}
       {!event && (
         <div className="goal-chip">
           <b>다음 목표</b> {nextGoal(p)}
@@ -107,6 +119,10 @@ export function Career({
       )}
 
       {event && <EventCard event={event} position={p.position} onChoose={onChoose} />}
+
+      {(p.health < 50 || p.injury) && <p className="condition-notice" role="status">
+        {p.injury ? `${p.injury.name} · 출전 시간이 줄어든 상태입니다.` : "체력이 떨어져 출전 시간이 줄고 부상 위험이 커졌습니다."} 회복 선택으로 다음 기회를 준비할 수 있습니다.
+      </p>}
 
       <section className="card projection">
         <header>
@@ -219,7 +235,7 @@ function EventCard({
   return (
     <section className="event" id="event-card">
       <span className="tag">{event.tag}</span>
-      <h3>{event.title}</h3>
+      <h3 id="event-title" tabIndex={-1}>{event.title}</h3>
       <p>{event.body}</p>
       <div className="choices">
         {event.choices.map((c) => {

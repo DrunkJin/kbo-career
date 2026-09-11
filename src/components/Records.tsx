@@ -10,7 +10,7 @@ export function SeasonTable({ p, compact = false }: { p: PlayerState; compact?: 
     return <p className="muted" style={{ fontSize: 13 }}>아직 시즌 기록이 없습니다.</p>;
 
   return (
-    <div className="table-wrap">
+    <div className="table-wrap" role="region" aria-label="시즌 기록표 · 좌우로 스크롤할 수 있습니다" tabIndex={0}>
       <table className="rec">
         <thead>
           <tr>
@@ -197,6 +197,7 @@ export function RecordsTab({ p }: { p: PlayerState }) {
           <h3>시즌별 기록</h3>
           <span className="muted mono" style={{ fontSize: 11 }}>노란 줄 = 커리어 하이</span>
         </header>
+        <p className="table-hint">← 좌우로 밀어 전체 기록을 확인하세요 →</p>
         <SeasonTable p={p} />
       </section>
       <div className="grid-2">

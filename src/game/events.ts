@@ -4,6 +4,7 @@ import { CAREER_EVENTS } from "./events-career";
 import { POSITION_EVENTS } from "./events-position";
 import { LIFE_EVENTS } from "./events-life";
 import { TEAM_EVENTS } from "./events-team";
+import { POSITION_STORIES, CLUB_POSITION_STORIES } from "./events-stories";
 import type { Choice, GameEvent, PlayerState } from "./types";
 
 const edge = (s: PlayerState) => s.ovr - LEAGUES[s.contract.league].level;
@@ -1089,6 +1090,8 @@ export const EVENTS: GameEvent[] = [
   ...POSITION_EVENTS,
   ...TEAM_EVENTS,
   ...LIFE_EVENTS,
+  ...POSITION_STORIES,
+  ...CLUB_POSITION_STORIES,
 ];
 
 /**
@@ -1102,11 +1105,12 @@ const fitsPosition = (e: GameEvent, s: PlayerState) =>
 /** 이 이벤트가 지금 이 선수에게 등장할 수 있는가 */
 export function eventFits(e: GameEvent, s: PlayerState, phase: number, usedIds: string[]) {
   if (!e.phases.includes(phase as never)) return false;
-  if (!e.repeatable && usedIds.includes(e.id)) return false;
+  if (usedIds.includes(e.id)) return false;
   if (!fitsPosition(e, s)) return false;
   if (e.leagues && !e.leagues.includes(s.contract.league)) return false;
   if (e.teams && !e.teams.includes(stripFarm(s.contract.team))) return false;
-  const yearNo = s.seasons.length + 1; // 프로 1년차부터
+  // 결산 뒤에도 같은 연도의 오프시즌은 같은 연차입니다.
+  const yearNo = s.seasons.filter(r => r.year < s.year).length + 1;
   if (e.minSeason !== undefined && yearNo < e.minSeason) return false;
   if (e.maxSeason !== undefined && yearNo > e.maxSeason) return false;
   if (e.when && !e.when(s)) return false;
