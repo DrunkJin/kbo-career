@@ -4,6 +4,7 @@ import type { Offer, PlayerState } from "../game/types";
 import { LeagueBadge, TeamLogo } from "./bits";
 import { Modal } from "./Modal";
 import { OverseasMoment } from "./CareerMoment";
+import { SceneArt } from "./SceneArt";
 
 export function OfferCard({ offer, onAccept }: { offer: Offer; onAccept: (o: Offer) => void }) {
   const lg = LEAGUES[offer.league];
@@ -64,7 +65,7 @@ export function OfferModal({
           </div>
         </div>
         <div className="contract-baseline"><b>현재 계약</b><span>{player.contract.team}</span><span>연봉 {fmtSalary(player.contract.salary, player.contract.league)} · 잔여 {player.contract.left}년</span><small>제안의 연봉·기간·예상 역할을 비교한 뒤 선택하세요.</small></div>
-        {offers.some(o => o.kind === "해외진출") && <OverseasMoment />}
+        {offers.some(o => o.kind === "해외진출") ? <OverseasMoment /> : <SceneArt kind="contract" />}
         <div className="offer-grid">
           {offers.map((o) => (
             <OfferCard key={`${o.team}-${o.league}-${o.label}`} offer={o} onAccept={onAccept} />

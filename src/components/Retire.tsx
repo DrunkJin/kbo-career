@@ -10,6 +10,7 @@ import {
 import type { PlayerState } from "../game/types";
 import { AwardsPanel, CareerTotalsRow, IntlPanel, LeaguePanel, SeasonTable } from "./Records";
 import { LeagueBadge, TeamLogo } from "./bits";
+import { SceneArt } from "./SceneArt";
 
 export function Retire({
   p,
@@ -61,6 +62,7 @@ export function Retire({
   return (
     <main className="retire">
       <div className="retire-inner">
+        <SceneArt kind="farewell" cinematic />
         <section className="retire-hero">
           <TeamLogo team={finalTeam} size={92} ring />
           <span className="eyebrow">

@@ -25,8 +25,10 @@ export function CareerMoment({ player, result }: { player: PlayerState; result: 
 export function MomentArt({ kind }: { kind: "championship" | "overseas" }) {
   const [failed, setFailed] = useState(false);
   if (failed) return null;
-  return <img className="moment-art" src={`${import.meta.env.BASE_URL}moments/${kind}.webp`}
-    width={1672} height={941} decoding="async" onError={() => setFailed(true)}
+  return <img className="moment-art" src={`${import.meta.env.BASE_URL}moments/${kind}.webp?v=sketch-1`}
+    srcSet={`${import.meta.env.BASE_URL}moments/${kind}-small.webp?v=sketch-1 480w, ${import.meta.env.BASE_URL}moments/${kind}.webp?v=sketch-1 960w`}
+    sizes="(max-width: 620px) calc(100vw - 40px), 960px"
+    width={960} height={540} decoding="async" onError={() => setFailed(true)}
     alt={kind === "championship" ? "야간 구장에서 동료들과 우승 트로피를 들어 올리는 선수들" : "장비 가방을 메고 낯선 해외 구장의 터널을 나서는 선수"} />;
 }
 

@@ -146,7 +146,9 @@ test('터치 브라우저에서 하단 메뉴, 선택, 가로 화면', async ({b
   await page.getByRole('button',{name:'커리어',exact:true}).tap();
   await page.getByRole('button',{name:/진행하기/}).tap();
   await page.locator('.choices button').first().tap();
-  await expect(page.locator('.impact-wrap')).toBeVisible();
+  // Random story choices can change relationships without a numeric impact panel.
+  await expect(page.locator('#event-card')).toHaveCount(0);
+  await expect(page.locator('.headline:not(.awaiting-choice) p')).toBeVisible();
   await noOverflow(page);
   await page.setViewportSize({width:844,height:390});
   await noOverflow(page);

@@ -6,6 +6,8 @@ import type { Choice, GameEvent, PlayerState } from "../game/types";
 import { RISK_DESC, describeChoice } from "../game/describe";
 import { ImpactList, LeagueBadge, ProjectionLine, TeamLogo, Term } from "./bits";
 import { OverseasMoment } from "./CareerMoment";
+import { SceneArt } from "./SceneArt";
+import { eventScene } from "../game/scene-art";
 
 const PHASE_SUB = ["훈련 방침", "슬럼프 · 사건", "데드라인", "성적 집계", "계약 · 휴식"];
 
@@ -236,11 +238,14 @@ function EventCard({
   position: PlayerState["position"];
   onChoose: (c: Choice) => void;
 }) {
+  const scene = eventScene(event.id, position);
   return (
     <section className="event" id="event-card">
       <div className="event-heading"><span className="tag">{event.tag}</span><span>시즌 에피소드 · {position}</span></div>
-      <h3 id="event-title" tabIndex={-1}>{event.title}</h3>
-      <p>{event.body}</p>
+      <div className={`event-story${scene ? " with-art" : ""}`}>
+        {scene && <SceneArt key={scene} kind={scene} />}
+        <div><h3 id="event-title" tabIndex={-1}>{event.title}</h3><p>{event.body}</p></div>
+      </div>
       <div className="choices">
         {event.choices.map((c, index) => {
           const views = describeChoice(c, position);

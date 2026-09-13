@@ -1,8 +1,9 @@
-import { useState, type CSSProperties } from "react";
+import { useState } from "react";
 import { KOREAN_NAMES, POSITIONS } from "../game/data";
 import { pick } from "../game/engine";
 import { SPEED_LABEL } from "../game/store";
 import type { Position, Speed } from "../game/types";
+import { SceneArt } from "./SceneArt";
 
 const SPEED_HELP: Record<Speed, string> = {
   normal: "캠프 · 전반기 · 후반기 · 오프시즌을 직접 선택합니다. 이야기를 꼼꼼히 즐기는 속도입니다.",
@@ -25,13 +26,14 @@ export function Setup({
 
   return (
     <main className="setup">
-      <section className="setup-copy" style={{ "--setup-art": `url('${import.meta.env.BASE_URL}moments/overseas.webp')` } as CSSProperties}>
+      <section className="setup-copy">
         <div className="eyebrow">Baseball Career Simulator · 2026</div>
         <h1>
           당신의 이름으로,
           <br />
           <em>야구 인생을 쓰다.</em>
         </h1>
+        <SceneArt kind={position === "투수" ? "pitching" : "batting"} />
         <p>
           드래프트, 국제계약, 육성선수, 혹은 기적 같은 즉시 데뷔. 시작점은 무작위지만
           그 다음은 당신의 선택입니다. 매 시즌 찾아오는 갈림길이 능력치를 바꾸고,
