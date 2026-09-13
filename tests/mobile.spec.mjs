@@ -30,12 +30,23 @@ for (const width of [320, 390, 768, 1440]) {
     const errors = []; page.on('pageerror', error => errors.push(error.message));
     const s = career();
     s.result = null; s.player.phase = 0; s.offers = null;
+    s.player.year += 1; s.player.age += 1; s.player.injury = null;
     s.event = game.EVENTS.find(e => e.id === 'story-o-veteran');
     await load(page, s);
     await expect(page.locator('#event-title')).toHaveText('펜스와의 거리를 바꾼다');
     await expect.poll(() => page.evaluate(() => document.querySelector('#event-title').getBoundingClientRect().top >= document.querySelector('.topbar').getBoundingClientRect().bottom + 8)).toBe(true);
     await noOverflow(page);
     await page.screenshot({ path: info.outputPath('event.png'), fullPage: true });
+    await page.screenshot({ path: info.outputPath('event-viewport.png') });
+    await expect(page.locator('.career-details')).not.toHaveAttribute('open');
+    await page.locator('.career-details > summary').click();
+    await expect(page.locator('.projection')).toBeVisible();
+    await page.locator('.career-details > summary').click();
+    if (width <= 390) {
+      const nav = await page.getByRole('navigation', { name: '게임 메뉴' }).boundingBox();
+      expect(nav.y + nav.height).toBeLessThanOrEqual(741);
+      expect(nav.y).toBeGreaterThan(600);
+    }
     const choice = page.locator('.choices button').first();
     await choice.focus(); await page.keyboard.press('Enter');
     await expect(page.locator('.event')).toHaveCount(0);
@@ -48,9 +59,16 @@ for (const width of [320, 390, 768, 1440]) {
     expect(await page.evaluate(() => !!document.activeElement.closest('[role="dialog"]'))).toBe(true);
     await page.getByRole('button', { name: '오프시즌으로' }).click();
     await page.getByRole('button', { name: '기록실', exact: true }).click();
+    const beforeKeyboard = await page.evaluate(() => localStorage.getItem('kbo-career-save-v2'));
+    await page.evaluate(() => document.activeElement.blur());
+    await page.keyboard.press('Space');
+    expect(await page.evaluate(() => localStorage.getItem('kbo-career-save-v2'))).toBe(beforeKeyboard);
     await noOverflow(page);
     const table = page.getByRole('region', { name: /시즌 기록표/ });
     await expect(table).toBeVisible();
+    await page.getByRole('combobox', { name: '리그별 보기' }).selectOption(s.player.seasons.at(-1).league);
+    await expect(table.locator('tbody tr')).toHaveCount(s.player.seasons.filter(r => r.league === s.player.seasons.at(-1).league).length + 1);
+    await page.getByRole('combobox', { name: '리그별 보기' }).selectOption('all');
     if (width <= 390) {
       expect(await table.evaluate(el => el.scrollWidth > el.clientWidth)).toBe(true);
       await table.evaluate(el => { el.scrollLeft = el.scrollWidth; });
@@ -98,6 +116,42 @@ test('새 선수 시작과 이벤트 새로고침 복구', async ({ page }) => {
   await page.locator('.choices button').first().click();
   await expect(page.locator('.event')).toHaveCount(0);
   await noOverflow(page);
+});
+
+test('기존 저장의 투수 타격 이벤트를 교체하고 커리어는 보존', async ({page}) => {
+  const s = game.reducer(game.initialState(), {type:'START', name:'투수복구', position:'투수'});
+  s.player.contract.league='KBO'; s.player.contract.team='SSG 랜더스'; s.player.phase=1;
+  s.event={...game.EVENTS.find(e=>e.id==='t-ssg'),body:'투수가 타석에 서는 이전 버전 본문'};
+  await load(page,s);
+  await expect(page.locator('.pb-id h1')).toContainText('투수복구');
+  await expect(page.locator('#event-title')).not.toHaveText('홈런 공장');
+  await expect(page.locator('#event-card')).not.toContainText('이전 버전 본문');
+  const title=await page.locator('#event-title').textContent();
+  const reopened = await page.context().newPage();
+  await reopened.goto('./');
+  await reopened.getByRole('button',{name:'저장된 커리어 이어하기'}).click();
+  await expect(reopened.locator('#event-title')).toHaveText(title);
+  await reopened.close();
+});
+
+test('터치 브라우저에서 하단 메뉴, 선택, 가로 화면', async ({browser}, info) => {
+  const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});
+  const page=await context.newPage();
+  await page.goto('http://127.0.0.1:4175/kbo-career/');
+  await page.screenshot({path:info.outputPath('mobile-start.png')});
+  await page.getByRole('button',{name:/운명적인 첫 오퍼/}).tap();
+  await page.getByRole('button',{name:'건너뛰기'}).tap();
+  await page.getByRole('button',{name:'선수',exact:true}).tap();
+  await expect(page.locator('.attrs')).toBeVisible();
+  await page.getByRole('button',{name:'커리어',exact:true}).tap();
+  await page.getByRole('button',{name:/진행하기/}).tap();
+  await page.locator('.choices button').first().tap();
+  await expect(page.locator('.impact-wrap')).toBeVisible();
+  await noOverflow(page);
+  await page.setViewportSize({width:844,height:390});
+  await noOverflow(page);
+  await page.screenshot({path:info.outputPath('landscape.png')});
+  await context.close();
 });
 
 test('우승 연출과 모바일 용어 설명', async ({ page }, info) => {

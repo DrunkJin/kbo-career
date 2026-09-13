@@ -40,7 +40,7 @@ const TABS: [Tab, string][] = [
   ["records", "기록실"],
   ["market", "이적 시장"],
 ];
-const MOBILE_TABS: [Tab, string][] = [["player", "선수"], ...TABS];
+const MOBILE_TABS: [Tab, string][] = [...TABS, ["player", "선수"]];
 
 export function App() {
   const [state, dispatch] = useReducer(reducer, undefined, initialState);
@@ -48,6 +48,10 @@ export function App() {
   const isMobile = useIsMobile();
   const tabs = isMobile ? MOBILE_TABS : TABS;
   const showSide = !isMobile || tab === "player";
+  const changeTab = (next: Tab) => {
+    setTab(next);
+    window.scrollTo({ top: 0, behavior: "instant" });
+  };
   const mainTab: Tab = tab === "player" ? "career" : tab;
   const [savedGame, setSavedGame] = useState(() => loadGame());
   const [toasts, setToasts] = useState<
@@ -105,7 +109,7 @@ export function App() {
 
   /* 스페이스바 진행 */
   useEffect(() => {
-    if (screen !== "play") return;
+    if (screen !== "play" || tab !== "career") return;
     const onKey = (e: KeyboardEvent) => {
       const el = e.target as HTMLElement | null;
       if (el?.closest('button, a, input, textarea, select, summary, [role="dialog"], [contenteditable="true"]')) return;
@@ -118,7 +122,7 @@ export function App() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [screen, event, offers, result, guide]);
+  }, [screen, event, offers, result, guide, tab]);
 
   const keys = useMemo(() => visibleKeys(p.position), [p.position]);
   const lg = LEAGUES[p.contract.league];
@@ -151,9 +155,9 @@ export function App() {
         <span className="brand">
           <i>BC</i> BASELINE <small>CAREER</small>
         </span>
-        <nav>
+        <nav aria-label="게임 메뉴">
           {tabs.map(([id, label]) => (
-            <button key={id} className={tab === id ? "on" : ""} aria-current={tab === id ? "page" : undefined} onClick={() => setTab(id)}>
+            <button key={id} className={tab === id ? "on" : ""} aria-current={tab === id ? "page" : undefined} onClick={() => changeTab(id)}>
               {label}
               {id === "market" && offers?.length ? ` (${offers.length})` : ""}
             </button>
@@ -178,7 +182,7 @@ export function App() {
             <span>AGE {p.age}</span>
           </div>
         </div>
-        <button className="help-btn" onClick={() => setGuide(true)} title="게임 안내">?</button>
+        <button className="help-btn" onClick={() => setGuide(true)} aria-label="게임 안내" title="게임 안내">?</button>
       </header>
 
       <section className="playerbar" style={{ ["--team" as string]: teamColor(p.contract.team) }}>

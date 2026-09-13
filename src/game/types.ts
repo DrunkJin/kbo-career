@@ -145,6 +145,13 @@ export type GameEvent = {
   leagues?: LeagueId[];
   /** 이 구단에서만 등장 (모구단 이름 기준) */
   teams?: string[];
+  /** 현재 보직에 맞는 경기 상황만 허용합니다. */
+  roles?: Role[];
+  minAge?: number;
+  /** 장기 재활 중에도 가능한 상담·생활 이벤트입니다. 기본값은 실전/훈련입니다. */
+  duringRehab?: boolean;
+  /** 첫 경험 등 커리어에서 한 번만 발생해야 하는 사건입니다. */
+  once?: boolean;
   /** 프로 n년차 이상 / 이하 (첫 시즌 = 1년차) */
   minSeason?: number;
   maxSeason?: number;

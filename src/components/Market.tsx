@@ -63,6 +63,7 @@ export function OfferModal({
             </p>
           </div>
         </div>
+        <div className="contract-baseline"><b>현재 계약</b><span>{player.contract.team}</span><span>연봉 {fmtSalary(player.contract.salary, player.contract.league)} · 잔여 {player.contract.left}년</span><small>제안의 연봉·기간·예상 역할을 비교한 뒤 선택하세요.</small></div>
         {offers.some(o => o.kind === "해외진출") && <OverseasMoment />}
         <div className="offer-grid">
           {offers.map((o) => (

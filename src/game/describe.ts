@@ -51,9 +51,9 @@ export function describeChoice(c: Choice, position: Position): OutcomeView[] {
 }
 
 export const RISK_DESC: Record<Choice["risk"], string> = {
-  안정: "결과가 정해져 있습니다",
-  도전: "성공 확률이 있고, 실패해도 손해가 크지 않습니다",
-  무모: "크게 얻거나 크게 잃습니다",
+  안정: "부담을 줄이는 선택",
+  도전: "성장과 기회를 노리는 선택",
+  무모: "큰 손실 위험을 감수하는 선택",
 };
 
 /** 시즌 WAR 기준 등급. 심사가 아니라 감을 잡기 위한 표시입니다. */

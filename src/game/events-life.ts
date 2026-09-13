@@ -28,11 +28,11 @@ export const LIFE_EVENTS: GameEvent[] = [
     repeatable: true,
     variants: [
       { body: "더블헤더 앞두고 첫 경기가 비로 날아갔습니다. 대기실에서 세 시간을 보냈습니다." },
-      { title: "태풍 특보", body: "태풍으로 홈 3연전이 통째로 밀렸습니다. 갑자기 나흘이 비었습니다." },
+      { title: "우천 취소", body: "원정 야외 구장의 경기가 비로 취소됐습니다. 오늘은 숙소와 실내 훈련장을 이용해야 합니다." },
     ],
     choices: [
       sure("실내 훈련장에 간다", "능력치 소폭 · 체력 소모", "안정", {
-        focus: "weakness", health: -4, text: "비 오는 날 케이지 소리는 유난히 크게 울립니다.", tone: "good",
+        focus: "weakness", health: -4, text: "비 오는 날 실내 훈련장의 공 소리는 유난히 크게 울립니다.", tone: "good",
       }),
       sure("푹 쉰다", "체력·멘탈 회복", "안정", {
         health: 10, morale: 8, text: "오랜만에 낮잠을 잤습니다. 몸이 가벼워졌습니다.", tone: "good",
@@ -83,7 +83,7 @@ export const LIFE_EVENTS: GameEvent[] = [
         attrs: { mental: 2 }, health: 2, text: "어디서든 같은 시간에 같은 것을 했습니다. 프로의 방식입니다.", tone: "good",
       }),
       sure("영상 분석으로 밤을 채운다", "약점 보완 · 수면 부족", "도전", {
-        focus: "weakness", health: -8, text: "상대 투수를 새벽까지 돌려봤습니다. 다음 타석이 조금 편했습니다.", tone: "good",
+        focus: "weakness", health: -8, text: "상대 선수의 경기 영상을 새벽까지 돌려봤습니다. 다음 승부의 준비가 조금 더 됐습니다.", tone: "good",
       }),
     ],
   },
@@ -91,14 +91,15 @@ export const LIFE_EVENTS: GameEvent[] = [
   /* ══════════════ 팬 ══════════════ */
   {
     id: "life-fanletter",
+    duringRehab: true,
     phases: [1, 2],
     tag: "팬",
     title: "편지 한 통",
     body: "라커에 손편지가 놓여 있습니다. 병원에서 당신 경기를 보며 버틴다는 아이의 글씨입니다.",
     repeatable: true,
     variants: [
-      { body: "팬 사인회에서 한 어르신이 20년 된 유니폼을 내밉니다. 당신 등번호가 새겨져 있습니다." },
-      { title: "응원가", body: "관중석에서 당신 응원가를 처음 들었습니다. 누군가 밤새 만들었을 노래입니다." },
+      { body: "오랫동안 구단을 응원한 팬이 편지를 보냈습니다. 최근 당신의 플레이를 보고 응원할 선수가 한 명 더 생겼다고 합니다." },
+      { title: "응원가", body: "팬이 직접 만든 응원 문구를 편지에 적어 보냈습니다. 서툰 글씨에 정성이 가득합니다." },
     ],
     choices: [
       sure("직접 답장을 쓴다", "멘탈 · 명성", "안정", {
@@ -111,6 +112,7 @@ export const LIFE_EVENTS: GameEvent[] = [
   },
   {
     id: "life-hate",
+    duringRehab: true,
     phases: [1, 2],
     tag: "팬",
     title: "쏟아지는 악플",
@@ -129,14 +131,15 @@ export const LIFE_EVENTS: GameEvent[] = [
         hint: "명성 상승 또는 역풍",
         risk: "무모",
         outcomes: [
-          { weight: 2, effect: { fame: 14, morale: 10, focus: "strength", text: "그 주에 몰아쳤습니다. 댓글창이 조용해졌습니다.", tone: "good" } },
-          { weight: 2, effect: { fame: -10, morale: -14, text: "말한 다음 날 무안타. 캡처가 돌았습니다.", tone: "bad" } },
+          { weight: 2, effect: { fame: 14, morale: 10, focus: "strength", text: "좋은 플레이로 응답했습니다. 비판 일색이던 반응이 조금 달라졌습니다.", tone: "good" } },
+          { weight: 2, effect: { fame: -10, morale: -14, text: "말한 다음 경기에서도 부진했습니다. 인터뷰 캡처가 돌았습니다.", tone: "bad" } },
         ],
       },
     ],
   },
   {
     id: "life-kidfan",
+    duringRehab: true,
     phases: [2],
     tag: "팬",
     title: "담장 너머의 아이",
@@ -156,10 +159,11 @@ export const LIFE_EVENTS: GameEvent[] = [
   },
   {
     id: "life-allstar-vote",
+    leagues: ["KBO", "NPB", "MLB"],
     phases: [1],
     tag: "올스타",
-    title: "팬투표 순위",
-    body: "올스타 팬투표 중간 집계에서 당신이 2위입니다. 1위와의 차이는 얼마 안 됩니다.",
+    title: "올스타를 향한 응원",
+    body: "올스타 선발을 앞두고 당신의 이름이 후보로 거론됩니다. 팬들의 응원도 늘고 있습니다.",
     when: (s) => tier(s) >= 3 && s.fame >= 40,
     variants: [
       { body: "감독 추천 올스타 명단에 당신 이름이 거론됩니다. 마지막 자리 하나를 두고 경합 중입니다." },
@@ -170,12 +174,12 @@ export const LIFE_EVENTS: GameEvent[] = [
         hint: "명성 크게 · 부담",
         risk: "도전",
         outcomes: [
-          { weight: 3, effect: { fame: 18, morale: 12, text: "올스타에 뽑혔습니다. 팬투표 1위. 그 주말은 축제였습니다.", tone: "good" } },
-          { weight: 2, effect: { fame: 4, morale: -8, text: "간발의 차로 밀렸습니다. 다음에는 성적으로 뽑히겠다고 다짐했습니다.", tone: "neutral" } },
+          { weight: 3, effect: { fame: 18, morale: 12, text: "팬들의 응원이 힘이 됐습니다. 올스타 후보를 향한 관심이 높아졌습니다.", tone: "good" } },
+          { weight: 2, effect: { fame: 4, morale: -8, text: "호소만으로 분위기를 바꾸기는 어려웠습니다. 남은 경기에서 보여줘야 합니다.", tone: "neutral" } },
         ],
       },
       sure("성적으로만 말한다", "집중", "안정", {
-        focus: "strength", fame: 4, text: "투표는 신경 쓰지 않았습니다. 대신 그 주에 잘 쳤습니다.", tone: "good",
+        focus: "strength", fame: 4, text: "선발 이야기에 휘둘리지 않고 훈련에 집중했습니다.", tone: "good",
       }),
     ],
   },
@@ -189,8 +193,8 @@ export const LIFE_EVENTS: GameEvent[] = [
     body: "말이 통하지 않는 새 동료가 옆 라커를 씁니다. 첫 주 내내 혼자 밥을 먹습니다.",
     repeatable: true,
     variants: [
-      { body: "새 외국인 투수가 통역 없이 불펜에 서 있습니다. 포수 사인이 안 맞아 헤매고 있습니다." },
-      { body: "외국인 타자가 한국 음식 앞에서 굳어 있습니다. 누군가는 손을 내밀어야 합니다." },
+      { body: "새 동료가 통역 없이 훈련장에 서 있습니다. 훈련 순서를 몰라 헤매고 있습니다." },
+      { body: "새 동료가 낯선 식당 메뉴 앞에서 굳어 있습니다. 누군가는 손을 내밀어야 합니다." },
     ],
     choices: [
       sure("먼저 다가간다", "팀 신뢰 · 멘탈", "안정", {
@@ -203,6 +207,7 @@ export const LIFE_EVENTS: GameEvent[] = [
   },
   {
     id: "life-released",
+    duringRehab: true,
     phases: [0, 4],
     tag: "라커룸",
     title: "방출된 동기",
@@ -210,7 +215,7 @@ export const LIFE_EVENTS: GameEvent[] = [
     minSeason: 2,
     variants: [
       { body: "한 방을 썼던 선배가 은퇴를 발표했습니다. 라커 명패가 떼어지는 걸 봤습니다." },
-      { body: "친한 후배가 2군 강등 통보를 받고 눈물을 참고 있습니다." },
+      { body: "친한 동료가 다른 팀으로 떠나게 됐습니다. 짐을 싸며 눈물을 참고 있습니다." },
     ],
     choices: [
       sure("끝까지 배웅한다", "멘탈 · 신뢰", "안정", {
@@ -249,6 +254,7 @@ export const LIFE_EVENTS: GameEvent[] = [
   },
   {
     id: "life-veteran-tip",
+    duringRehab: true,
     phases: [0],
     tag: "라커룸",
     title: "베테랑의 노하우",
@@ -277,7 +283,7 @@ export const LIFE_EVENTS: GameEvent[] = [
     body: "결정적인 순간 오심. 리플레이는 명백한데 판정은 바뀌지 않았습니다.",
     repeatable: true,
     variants: [
-      { body: "스트라이크존이 오늘따라 한 뼘은 넓습니다. 세 번째 루킹 삼진에 배트를 놓쳤습니다." },
+      { body: "베이스에서의 접전 끝에 불리한 판정이 나왔습니다. 벤치에서 본 장면과 달라 답답합니다." },
       { body: "비디오 판독 결과가 뒤집혔습니다. 벤치가 들끓습니다." },
     ],
     choices: [
@@ -287,11 +293,11 @@ export const LIFE_EVENTS: GameEvent[] = [
         risk: "무모",
         outcomes: [
           { weight: 2, effect: { fame: 8, teamTrust: 8, morale: 6, text: "팬들이 환호했습니다. 경고로 끝났습니다.", tone: "good" } },
-          { weight: 2, effect: { fame: -6, teamTrust: -8, health: -4, text: "퇴장. 벌금과 함께 다음 경기 결장입니다.", tone: "bad" } },
+          { weight: 2, effect: { fame: -6, teamTrust: -8, health: -4, text: "퇴장 명령을 받았습니다. 더는 그 경기에서 뛸 수 없습니다.", tone: "bad" } },
         ],
       },
       sure("삼킨다", "멘탈", "안정", {
-        attrs: { mental: 3 }, morale: -4, text: "다음 타석에서 갚기로 했습니다.", tone: "neutral",
+        attrs: { mental: 3 }, morale: -4, text: "다음 플레이에 집중하기로 했습니다.", tone: "neutral",
       }),
     ],
   },
@@ -305,8 +311,8 @@ export const LIFE_EVENTS: GameEvent[] = [
     for: "batter",
     when: (s) => edge(s) >= -3,
     variants: [
-      { body: "연장 11회. 벤치는 비었고 당신이 마지막 카드입니다." },
-      { body: "1점 뒤진 9회말 1사 2, 3루. 감독이 대타를 쓰지 않았습니다. 당신을 믿는다는 뜻입니다." },
+      { body: "연장전 동점, 2사 만루. 당신의 타석에 더그아웃 모두가 집중합니다." },
+      { body: "동점인 9회말 2사 만루. 감독이 대타를 쓰지 않았습니다. 당신을 믿는다는 뜻입니다." },
     ],
     choices: [
       {
@@ -325,14 +331,15 @@ export const LIFE_EVENTS: GameEvent[] = [
   },
   {
     id: "life-save-situation",
+    roles: ["불펜", "마무리"],
     phases: [1, 2],
     tag: "세이브",
     title: "1점 차 9회",
-    body: "마무리가 지쳤습니다. 감독이 당신에게 공을 넘깁니다. 첫 세이브 기회입니다.",
+    body: "한 점 앞선 9회, 무사 주자 없음. 감독이 당신에게 마지막 이닝을 맡깁니다.",
     repeatable: true,
     for: "pitcher",
     variants: [
-      { body: "9회 2사 만루, 상대 4번. 불펜 문이 열리고 당신 이름이 불렸습니다." },
+      { body: "한 점 차 리드, 9회 시작입니다. 불펜 문이 열리고 당신 이름이 불렸습니다." },
     ],
     choices: [
       {
@@ -340,12 +347,12 @@ export const LIFE_EVENTS: GameEvent[] = [
         hint: "성공 시 큰 신뢰 · 블론 위험",
         risk: "무모",
         outcomes: [
-          { weight: 4, effect: { fame: 14, teamTrust: 16, morale: 14, attrs: { mental: 3 }, text: "세이브. 포수와 하이파이브하고 처음으로 인터뷰실에 불려갔습니다.", tone: "good" } },
+          { weight: 4, effect: { fame: 14, teamTrust: 16, morale: 14, attrs: { mental: 3 }, text: "세이브. 포수와 하이파이브하며 접전을 마무리했습니다.", tone: "good" } },
           { weight: 3, effect: { morale: -14, teamTrust: -6, text: "블론세이브. 마운드에서 내려오는 길이 길었습니다.", tone: "bad" } },
         ],
       },
       sure("유인구 위주로 간다", "안정적인 투구", "안정", {
-        attrs: { control: 2, movement: 1 }, teamTrust: 6, text: "볼넷 하나 뒤 병살. 깔끔하진 않아도 세이브는 세이브입니다.", tone: "good",
+        attrs: { control: 2, movement: 1 }, teamTrust: 6, text: "볼넷 하나 뒤 병살, 마지막 타자는 땅볼. 깔끔하진 않아도 리드는 지켰습니다.", tone: "good",
       }),
     ],
   },
@@ -358,7 +365,7 @@ export const LIFE_EVENTS: GameEvent[] = [
     repeatable: true,
     for: "batter",
     variants: [
-      { body: "헬멧에 공을 맞았습니다. 잠시 시야가 흔들렸습니다." },
+      { body: "팔꿈치에 맞은 공 때문에 붓기가 남았습니다. 검진에서는 골절이 없다고 합니다." },
     ],
     choices: [
       {
@@ -379,6 +386,7 @@ export const LIFE_EVENTS: GameEvent[] = [
   /* ══════════════ 미디어 ══════════════ */
   {
     id: "life-interview-slip",
+    duringRehab: true,
     phases: [1, 2],
     tag: "미디어",
     title: "인터뷰 실언",
@@ -464,8 +472,8 @@ export const LIFE_EVENTS: GameEvent[] = [
         hint: "신뢰 · 성적 위험",
         risk: "도전",
         outcomes: [
-          { weight: 2, effect: { teamTrust: 8, health: -10, attrs: { mental: 2 }, text: "어떻게든 버텼습니다. 안타 하나가 유난히 값졌습니다.", tone: "neutral" } },
-          { weight: 2, effect: { health: -16, teamTrust: -6, morale: -6, text: "무안타에 실책. 코치가 뒤늦게 알고 화를 냈습니다.", tone: "bad" } },
+          { weight: 2, effect: { teamTrust: 8, health: -10, attrs: { mental: 2 }, text: "어떻게든 맡은 역할을 해냈습니다. 경기 뒤에는 피로가 몰려왔습니다.", tone: "neutral" } },
+          { weight: 2, effect: { health: -16, teamTrust: -6, morale: -6, text: "몸이 따라주지 않아 플레이가 흔들렸습니다. 코치가 뒤늦게 알고 화를 냈습니다.", tone: "bad" } },
         ],
       },
       sure("솔직히 말하고 쉰다", "체력 회복", "안정", {
@@ -475,6 +483,7 @@ export const LIFE_EVENTS: GameEvent[] = [
   },
   {
     id: "life-nutrition",
+    duringRehab: true,
     phases: [0],
     tag: "컨디션",
     title: "영양사의 제안",
@@ -487,12 +496,13 @@ export const LIFE_EVENTS: GameEvent[] = [
         attrs: { durability: 3, stamina: 2 }, health: 8, morale: -4, text: "석 달 뒤 몸이 달라졌다는 걸 스스로 느꼈습니다.", tone: "good",
       }),
       sure("내 방식대로 한다", "멘탈 유지", "안정", {
-        morale: 6, text: "먹는 즐거움까지 뺏기긴 싫었습니다.", tone: "neutral",
+        morale: 6, text: "익숙한 생활 리듬을 유지하기로 했습니다.", tone: "neutral",
       }),
     ],
   },
   {
     id: "life-rehab",
+    duringRehab: true,
     phases: [0, 1],
     tag: "재활",
     title: "재활의 나날",
@@ -511,7 +521,7 @@ export const LIFE_EVENTS: GameEvent[] = [
         hint: "빠른 복귀 · 재발 위험",
         risk: "무모",
         outcomes: [
-          { weight: 2, effect: { health: 4, teamTrust: 10, morale: 10, text: "예정보다 3주 일찍 돌아왔습니다. 몸이 버텨줬습니다.", tone: "good" } },
+          { weight: 2, effect: { health: 4, teamTrust: 10, morale: 10, text: "복귀 테스트를 향해 훈련 단계를 높였습니다. 아직 의료진의 확인이 남았습니다.", tone: "good" } },
           { weight: 3, effect: { injury: { name: "재발", severity: 0.5 }, health: -14, morale: -12, text: "같은 부위가 다시 아팠습니다. 처음부터 다시입니다.", tone: "bad" } },
         ],
       },
@@ -521,10 +531,11 @@ export const LIFE_EVENTS: GameEvent[] = [
   /* ══════════════ 가족 · 개인 ══════════════ */
   {
     id: "life-parents",
+    once: true,
     phases: [1, 2],
     tag: "가족",
     title: "부모님이 오신 날",
-    body: "처음으로 부모님이 1군 경기를 보러 오셨습니다. 3루 쪽 관중석에서 손을 흔드십니다.",
+    body: "부모님이 경기를 보러 오셨습니다. 3루 쪽 관중석에서 손을 흔드십니다.",
     when: (s) => tier(s) >= 3,
     variants: [
       { body: "고향 친구들이 단체로 원정 응원을 왔습니다. 현수막까지 만들어 왔습니다." },
@@ -535,8 +546,8 @@ export const LIFE_EVENTS: GameEvent[] = [
         hint: "멘탈 크게 · 힘 들어갈 위험",
         risk: "도전",
         outcomes: [
-          { weight: 3, effect: { morale: 18, fame: 6, attrs: { mental: 2 }, text: "안타 두 개. 경기 후 관중석을 향해 모자를 벗었습니다.", tone: "good" } },
-          { weight: 2, effect: { morale: -8, text: "힘이 들어갔습니다. 무안타. 그래도 저녁은 따뜻했습니다.", tone: "neutral" } },
+          { weight: 3, effect: { morale: 18, fame: 6, attrs: { mental: 2 }, text: "준비한 플레이가 통했습니다. 경기 후 관중석을 향해 모자를 벗었습니다.", tone: "good" } },
+          { weight: 2, effect: { morale: -8, text: "힘이 들어가 평소 실력을 내지 못했습니다. 그래도 저녁은 따뜻했습니다.", tone: "neutral" } },
         ],
       },
       sure("평소처럼 한다", "안정", "안정", {
@@ -546,7 +557,7 @@ export const LIFE_EVENTS: GameEvent[] = [
   },
   {
     id: "life-baby",
-    phases: [1, 2, 4],
+    phases: [1, 2],
     tag: "가족",
     title: "아이가 태어났습니다",
     body: "원정 중 전화가 왔습니다. 예정일보다 빠릅니다. 비행기는 두 시간 뒤에 있습니다.",
@@ -556,12 +567,13 @@ export const LIFE_EVENTS: GameEvent[] = [
         trait: "아빠", morale: 24, attrs: { mental: 4 }, teamTrust: -4, text: "첫 얼굴을 봤습니다. 야구가 전부가 아니라는 걸 처음 알았습니다.", tone: "good",
       }),
       sure("경기를 마치고 간다", "신뢰 · 후회", "도전", {
-        trait: "아빠", teamTrust: 10, morale: 6, text: "그날 경기에서 홈런을 쳤습니다. 아이 이름을 헬멧 안쪽에 적었습니다.", tone: "neutral",
+        trait: "아빠", teamTrust: 10, morale: 6, text: "경기를 마치자마자 가족에게 향했습니다. 아이 이름을 글러브 안쪽에 적었습니다.", tone: "neutral",
       }),
     ],
   },
   {
     id: "life-hometown",
+    duringRehab: true,
     phases: [4],
     tag: "오프시즌",
     title: "고향 방문",
@@ -597,12 +609,13 @@ export const LIFE_EVENTS: GameEvent[] = [
         teamTrust: 10, morale: 6, focus: "weakness", health: -2, text: "골프는 못 쳤지만 이야기는 잘 들었습니다.", tone: "neutral",
       }),
       sure("훈련을 택한다", "성장 · 관계 소홀", "도전", {
-        focus: "strength", teamTrust: -6, text: "겨울엔 라운딩보다 케이지였습니다.", tone: "good",
+        focus: "strength", teamTrust: -6, text: "겨울에는 골프장보다 훈련장이었습니다.", tone: "good",
       }),
     ],
   },
   {
     id: "life-trip",
+    duringRehab: true,
     phases: [4],
     tag: "오프시즌",
     title: "긴 휴가",
@@ -614,7 +627,7 @@ export const LIFE_EVENTS: GameEvent[] = [
     ],
     choices: [
       sure("완전히 쉰다", "멘탈·체력 대폭 회복", "안정", {
-        morale: 20, health: 14, focus: "weakness", text: "돌아왔을 때 배트가 가벼웠습니다.", tone: "good",
+        morale: 20, health: 14, focus: "weakness", text: "돌아왔을 때 몸과 마음이 가벼웠습니다.", tone: "good",
       }),
       sure("가서도 몸은 만든다", "체력 · 성장 균형", "안정", {
         health: 8, morale: 8, attrs: { durability: 2 }, text: "휴양지 새벽 달리기. 그것도 나쁘지 않았습니다.", tone: "good",
@@ -623,6 +636,7 @@ export const LIFE_EVENTS: GameEvent[] = [
   },
   {
     id: "life-fanmeeting",
+    duringRehab: true,
     phases: [4],
     tag: "오프시즌",
     title: "팬 페스티벌",
@@ -630,7 +644,7 @@ export const LIFE_EVENTS: GameEvent[] = [
     repeatable: true,
     when: (s) => s.fame >= 30,
     variants: [
-      { body: "구단 자선 경매에 당신 배트가 나갔습니다. 낙찰가가 예상을 넘었습니다." },
+      { body: "자선 행사와 함께 열린 팬 사인회입니다. 당신의 유니폼을 입은 팬들이 줄을 섰습니다." },
     ],
     choices: [
       sure("마지막 한 명까지 사인한다", "명성 · 팬심", "안정", {
@@ -687,6 +701,8 @@ export const LIFE_EVENTS: GameEvent[] = [
   /* ══════════════ 리그별 생활 ══════════════ */
   {
     id: "life-npb-language",
+    duringRehab: true,
+    once: true,
     phases: [0, 1],
     tag: "일본 생활",
     title: "말이 안 통하는 더그아웃",
@@ -706,6 +722,8 @@ export const LIFE_EVENTS: GameEvent[] = [
   },
   {
     id: "life-npb-food",
+    duringRehab: true,
+    once: true,
     phases: [1],
     tag: "일본 생활",
     title: "구단 식당",
@@ -726,10 +744,10 @@ export const LIFE_EVENTS: GameEvent[] = [
     tag: "미국 생활",
     title: "대륙 횡단 원정",
     body: "서부에서 동부로. 시차 3시간, 비행 5시간, 다음 날 낮경기입니다.",
-    leagues: ["MLB", "AAA", "AA"],
+    leagues: ["MLB"],
     repeatable: true,
     variants: [
-      { body: "마이너 원정 버스 12시간. 새벽에 도착해 오후에 경기입니다." },
+      { body: "원정 비행 일정이 늦어졌습니다. 도착하자마자 다음 경기를 준비해야 합니다." },
     ],
     choices: [
       sure("수면 루틴을 철저히", "체력 관리", "안정", {
@@ -742,14 +760,15 @@ export const LIFE_EVENTS: GameEvent[] = [
   },
   {
     id: "life-mlb-clubhouse",
+    once: true,
     phases: [0, 1],
     tag: "미국 생활",
     title: "클럽하우스의 규칙",
     body: "여기엔 말로 하지 않는 서열과 규칙이 있습니다. 루키가 베테랑 자리에 앉았다가 혼났습니다.",
     leagues: ["MLB"],
-    maxSeason: 12,
+    when: (s) => !s.seasons.some(r => r.league === "MLB"),
     variants: [
-      { body: "루키 헤이징. 원정길에 우스꽝스러운 옷을 입고 비행기를 타야 합니다." },
+      { body: "처음 참가하는 클럽하우스 모임입니다. 동료들이 가벼운 자기소개를 부탁합니다." },
     ],
     choices: [
       sure("웃으며 따른다", "팀 신뢰", "안정", {
@@ -762,14 +781,15 @@ export const LIFE_EVENTS: GameEvent[] = [
   },
   {
     id: "life-minor-bus",
+    duringRehab: true,
     phases: [1],
     tag: "마이너",
     title: "마이너의 밤",
-    body: "홈스테이 가정의 지하방. 식비를 아끼려 땅콩버터 샌드위치로 저녁을 때웁니다.",
+    body: "마이너 원정 숙소. 긴 버스 이동을 마치고 간단한 저녁 앞에 앉았습니다. 낯선 생활이 길어집니다.",
     leagues: ["AA", "AAA"],
     repeatable: true,
     variants: [
-      { body: "한 달 급여로 렌트비를 내면 남는 게 없습니다. 동료가 우버를 뛰자고 합니다." },
+      { body: "밤늦게 원정 숙소에 도착했습니다. 내일 경기를 생각하며 동료와 간단히 식사를 합니다." },
     ],
     choices: [
       sure("버틴다", "멘탈", "안정", {
@@ -785,11 +805,11 @@ export const LIFE_EVENTS: GameEvent[] = [
     phases: [1, 2],
     tag: "2군",
     title: "콜업 소문",
-    body: "1군 야수 하나가 다쳤다고 합니다. 2군 감독이 당신을 오래 쳐다봤습니다.",
+    body: "상위 팀이 당신 포지션의 선수층을 점검한다고 합니다. 코치가 최근 경기 영상을 요청했습니다.",
     leagues: ["KBO_F", "NPB_F", "AAA"],
     repeatable: true,
     variants: [
-      { body: "1군 코치가 2군 경기를 보러 왔습니다. 노트에 당신 이름이 적히는 걸 봤습니다." },
+      { body: "상위 팀의 코치가 경기를 보러 왔습니다. 당신의 준비 과정을 눈여겨봅니다." },
     ],
     choices: [
       {
@@ -797,8 +817,8 @@ export const LIFE_EVENTS: GameEvent[] = [
         hint: "콜업 어필 · 부담",
         risk: "도전",
         outcomes: [
-          { weight: 3, effect: { focus: "strength", teamTrust: 10, fame: 6, morale: 10, text: "멀티히트. 다음 날 짐을 싸라는 연락이 왔습니다.", tone: "good" } },
-          { weight: 2, effect: { morale: -12, text: "힘이 들어가 헛스윙만 했습니다. 콜업은 다른 선수 몫이 됐습니다.", tone: "bad" } },
+          { weight: 3, effect: { focus: "strength", teamTrust: 10, fame: 6, morale: 10, text: "좋은 플레이가 눈에 띄었습니다. 코치가 다음 평가에도 지켜보겠다고 했습니다.", tone: "good" } },
+          { weight: 2, effect: { morale: -12, text: "힘이 들어가 준비한 모습을 보여주지 못했습니다. 더 준비해야 한다는 평가를 받았습니다.", tone: "bad" } },
         ],
       },
       sure("평소대로 한다", "안정", "안정", {
@@ -813,12 +833,12 @@ export const LIFE_EVENTS: GameEvent[] = [
     phases: [1, 2],
     tag: "기록",
     title: "연속 경기 안타",
-    body: "17경기 연속 안타. 구단 기록까지 세 경기 남았습니다.",
+    body: "최근 경기에서 안타를 이어가고 있습니다. 기록을 의식하자 타석에서 생각이 많아집니다.",
     for: "batter",
     repeatable: true,
     when: (s) => edge(s) >= 0,
     variants: [
-      { body: "한 달째 3할 위. 기자들이 타격왕 얘기를 꺼내기 시작했습니다." },
+      { body: "연속 안타 행진이 이어집니다. 기자들이 개인 최장 기록을 찾아보기 시작했습니다." },
     ],
     choices: [
       sure("의식하지 않는다", "멘탈", "안정", {
@@ -829,7 +849,7 @@ export const LIFE_EVENTS: GameEvent[] = [
         hint: "명성 크게 · 타격 밸런스 위험",
         risk: "도전",
         outcomes: [
-          { weight: 2, effect: { fame: 14, morale: 12, text: "구단 신기록. 전광판에 이름이 올라갔습니다.", tone: "good" } },
+          { weight: 2, effect: { fame: 14, morale: 12, text: "안타 행진을 이어갔습니다. 자신감이 한층 높아졌습니다.", tone: "good" } },
           { weight: 2, effect: { attrs: { eye: -2 }, morale: -8, text: "나쁜 공에 손이 나갔습니다. 기록은 끊기고 선구가 흐트러졌습니다.", tone: "bad" } },
         ],
       },
@@ -840,7 +860,7 @@ export const LIFE_EVENTS: GameEvent[] = [
     phases: [1, 2],
     tag: "기록",
     title: "연속 무실점",
-    body: "20이닝 연속 무실점. 기자들이 리그 기록을 찾아보기 시작했습니다.",
+    body: "최근 등판에서 무실점 투구가 이어졌습니다. 그 흐름을 계속 이어가고 싶습니다.",
     for: "pitcher",
     repeatable: true,
     when: (s) => edge(s) >= 0,
@@ -853,8 +873,8 @@ export const LIFE_EVENTS: GameEvent[] = [
         hint: "명성 · 투구수 위험",
         risk: "도전",
         outcomes: [
-          { weight: 2, effect: { fame: 14, morale: 12, attrs: { velocity: 1 }, text: "구단 신기록. 마운드에서 포효했습니다.", tone: "good" } },
-          { weight: 2, effect: { health: -10, morale: -8, text: "힘으로 던지다 투구수가 폭발했습니다. 5회에 강판됐습니다.", tone: "bad" } },
+          { weight: 2, effect: { fame: 14, morale: 12, attrs: { velocity: 1 }, text: "무실점 행진을 이어갔습니다. 마운드에서 자신감을 얻었습니다.", tone: "good" } },
+          { weight: 2, effect: { health: -10, morale: -8, text: "힘으로 던지다 투구수가 늘었습니다. 실점 뒤 마운드를 내려왔습니다.", tone: "bad" } },
         ],
       },
     ],
@@ -863,25 +883,26 @@ export const LIFE_EVENTS: GameEvent[] = [
     id: "life-slump-deep",
     phases: [2],
     tag: "부진",
-    title: "한 달째 1할대",
-    body: "타순이 8번까지 내려갔습니다. 대타 기용 얘기가 나옵니다.",
+    title: "흔들리는 타격 리듬",
+    body: "타격 리듬이 흔들리며 자신감이 떨어졌습니다. 코치와 재정비 방법을 의논합니다.",
     for: "batter",
     repeatable: true,
     when: (s) => s.morale < 55,
     variants: [
-      { body: "3주째 무홈런. 파워 히터가 단타만 치고 있습니다." },
+      { body: "최근 타석에서 정타가 줄었습니다. 타격 코치가 영상을 함께 보자고 합니다." },
     ],
     choices: [
       sure("타격폼을 완전히 바꾼다", "약점 보완 · 적응 기간", "도전", {
         focus: "weakness", morale: -4, health: -6, text: "발을 붙였습니다. 어색했지만 공이 다시 보였습니다.", tone: "good",
       }),
-      sure("2군에서 재정비를 자청한다", "멘탈 회복 · 신뢰", "안정", {
-        morale: 14, attrs: { mental: 3 }, teamTrust: 6, fame: -4, text: "열흘 뒤 돌아왔습니다. 머리가 맑았습니다.", tone: "good",
+      sure("코치와 재정비 시간을 갖는다", "멘탈 회복 · 신뢰", "안정", {
+        morale: 14, attrs: { mental: 3 }, teamTrust: 6, fame: -4, text: "코치와 훈련 강도를 조절했습니다. 머리가 맑아졌습니다.", tone: "good",
       }),
     ],
   },
   {
     id: "life-era-blowup",
+    roles: ["선발"],
     phases: [2],
     tag: "부진",
     title: "연속 조기 강판",
@@ -900,10 +921,11 @@ export const LIFE_EVENTS: GameEvent[] = [
   },
   {
     id: "life-hr-derby",
+    leagues: ["KBO", "NPB", "MLB"],
     phases: [1],
     tag: "올스타",
     title: "홈런 더비 초청",
-    body: "올스타 홈런 더비에 초청받았습니다. 재미지만 스윙이 커진다는 징크스가 있습니다.",
+    body: "올스타 행사 홈런 더비에 초청받았습니다. 재미지만 스윙이 커진다는 징크스가 있습니다.",
     for: "batter",
     when: (s) => s.attrs.power >= 68 && tier(s) >= 3,
     choices: [
@@ -926,7 +948,7 @@ export const LIFE_EVENTS: GameEvent[] = [
     phases: [0],
     tag: "계약",
     title: "계약 마지막 해",
-    body: "올해가 끝나면 FA입니다. 에이전트는 '커리어 하이를 만들어야 한다'고 합니다.",
+    body: "올해가 현재 계약의 마지막 해입니다. 에이전트는 '커리어 하이를 만들어야 한다'고 합니다.",
     when: (s) => s.contract.left === 1 && tier(s) >= 3,
     variants: [
       { body: "재계약 협상이 시즌 전에 결렬됐습니다. 구단은 '시즌 끝나고 보자'고 합니다." },
@@ -938,7 +960,7 @@ export const LIFE_EVENTS: GameEvent[] = [
         risk: "도전",
         outcomes: [
           { weight: 3, effect: { focus: "strength", fame: 8, health: -10, text: "이를 악물었습니다. 숫자가 따라왔습니다.", tone: "good" } },
-          { weight: 2, effect: { health: -18, morale: -10, text: "조급함이 몸을 상하게 했습니다. FA 시장이 싸늘해졌습니다.", tone: "bad" } },
+          { weight: 2, effect: { health: -18, morale: -10, text: "조급함이 몸을 상하게 했습니다. 다음 계약에 대한 걱정이 커졌습니다.", tone: "bad" } },
         ],
       },
       sure("평소처럼 한다", "멘탈", "안정", {

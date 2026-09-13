@@ -43,23 +43,27 @@ export function Career({
     if (event || priorEvent.current) {
       const target = event ? document.getElementById("event-title") : moment.current;
       target?.focus({ preventScroll: true });
-      target?.scrollIntoView({ block: "start", behavior: "instant" });
+      (event ? document.getElementById("event-card") : target)?.scrollIntoView({ block: "start", behavior: "instant" });
     }
     priorEvent.current = event?.id ?? null;
   }, [event?.id]);
 
   return (
     <>
-      <div className="stepper">
+      <div className="season-context">
+        <div><span className="eyebrow">MY SEASON</span><h2>{p.year} 시즌 <small>프로 {p.seasons.filter(s => s.year < p.year).length + 1}년차</small></h2></div>
+        <span className="chip">{lg.short} · {p.position} · {role}</span>
+      </div>
+      <div className="stepper" aria-label="시즌 진행 단계">
         {PHASE_NAMES.map((label, i) => (
-          <div key={label} className={i === p.phase ? "now" : i < p.phase ? "done" : ""}>
+          <div key={label} aria-current={i === p.phase ? "step" : undefined} className={i === p.phase ? "now" : i < p.phase ? "done" : ""}>
             {label}
             <small>{PHASE_SUB[i]}</small>
           </div>
         ))}
       </div>
 
-      <div className="headline" ref={moment} tabIndex={-1}>
+      <div className={`headline${event ? " awaiting-choice" : ""}`} ref={moment} tabIndex={-1}>
         <div>
           <span className="status">
             {event ? "선택 대기 중" : blocked ? "결정 필요" : `${p.year} · ${PHASE_NAMES[p.phase]}`}
@@ -75,7 +79,7 @@ export function Career({
           </h2>
           <p>
             {event
-              ? "아래 선택지 중 하나를 고르세요. 되돌릴 수 없습니다."
+              ? "플레이 방식을 고르면 결과와 변화를 바로 확인할 수 있습니다."
               : headline || `${p.contract.team}에서의 여정이 계속됩니다.`}
           </p>
           {showImpacts && (
@@ -86,10 +90,7 @@ export function Career({
           )}
         </div>
         {event ? (
-          <div className="pick-hint" aria-live="polite">
-            <b>↓ 아래 선택지 중 하나를 고르세요</b>
-            <small>고르기 전에는 시즌이 진행되지 않습니다</small>
-          </div>
+          null
         ) : (
           <div className="headline-actions">
             <button className="btn primary" onClick={onAdvance} disabled={blocked}>
@@ -124,6 +125,8 @@ export function Career({
         {p.injury ? `${p.injury.name} · 출전 시간이 줄어든 상태입니다.` : "체력이 떨어져 출전 시간이 줄고 부상 위험이 커졌습니다."} 회복 선택으로 다음 기회를 준비할 수 있습니다.
       </p>}
 
+      <details className="career-details" open={!event} key={event ? "choosing" : "reviewing"}>
+      <summary>시즌 전망과 계약 확인 <span>선택 전에 현재 상태를 살펴보세요</span></summary>
       <section className="card projection">
         <header>
           <h3>지금 이대로 풀시즌을 치르면</h3>
@@ -197,6 +200,7 @@ export function Career({
           </div>
         </section>
       </div>
+      </details>
 
       <section className="card">
         <header>
@@ -234,17 +238,17 @@ function EventCard({
 }) {
   return (
     <section className="event" id="event-card">
-      <span className="tag">{event.tag}</span>
+      <div className="event-heading"><span className="tag">{event.tag}</span><span>시즌 에피소드 · {position}</span></div>
       <h3 id="event-title" tabIndex={-1}>{event.title}</h3>
       <p>{event.body}</p>
       <div className="choices">
-        {event.choices.map((c) => {
+        {event.choices.map((c, index) => {
           const views = describeChoice(c, position);
           const sure = views.length === 1;
           return (
             <button key={c.label} onClick={() => onChoose(c)}>
               <span>
-                <b>{c.label}</b>
+                <b><span className="choice-number" aria-hidden="true">0{index + 1}</span>{c.label}</b>
                 <small>{c.hint}</small>
                 <span className="outcomes">
                   {views.map((v, i) => (

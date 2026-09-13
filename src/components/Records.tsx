@@ -1,15 +1,22 @@
+import { useState } from "react";
 import { LEAGUES } from "../game/data";
 import { bestSeason, careerTotals, fmtAvg, leagueBreakdown, tallyAwards } from "../game/engine";
 import type { PlayerState } from "../game/types";
 import { LeagueBadge, TeamLogo } from "./bits";
 
 export function SeasonTable({ p, compact = false }: { p: PlayerState; compact?: boolean }) {
+  const [league, setLeague] = useState("all");
+  const [newest, setNewest] = useState(true);
   const best = bestSeason(p.seasons);
   const pitcher = p.position === "투수";
+  const rows = p.seasons.filter(s => league === "all" || s.league === league);
+  if (newest) rows.reverse();
   if (!p.seasons.length)
     return <p className="muted" style={{ fontSize: 13 }}>아직 시즌 기록이 없습니다.</p>;
 
   return (
+    <>
+    {!compact && <div className="record-controls"><label>리그별 보기 <select value={league} onChange={e => setLeague(e.target.value)}><option value="all">전체 리그</option>{[...new Set(p.seasons.map(s => s.league))].map(id => <option key={id} value={id}>{LEAGUES[id].label}</option>)}</select></label><button className="btn ghost" aria-pressed={newest} onClick={() => setNewest(v => !v)}>{newest ? "최신 시즌부터" : "첫 시즌부터"}</button><span>{rows.length}시즌</span></div>}
     <div className="table-wrap" role="region" aria-label="시즌 기록표 · 좌우로 스크롤할 수 있습니다" tabIndex={0}>
       <table className="rec">
         <thead>
@@ -32,7 +39,7 @@ export function SeasonTable({ p, compact = false }: { p: PlayerState; compact?: 
           </tr>
         </thead>
         <tbody>
-          {p.seasons.map((s) => (
+          {rows.map((s) => (
             <tr key={`${s.year}-${s.team}`} className={best && s.year === best.year ? "best" : ""}>
               <td className="l">
                 {s.year} <span className="muted">({s.age})</span>
@@ -72,6 +79,7 @@ export function SeasonTable({ p, compact = false }: { p: PlayerState; compact?: 
         </tbody>
       </table>
     </div>
+    </>
   );
 }
 

@@ -11,6 +11,7 @@ export const CAREER_EVENTS: GameEvent[] = [
   /* ══════════ 1~2년차 · 루키 ══════════ */
   {
     id: "rk-first-camp",
+    once: true,
     phases: [0],
     tag: "루키",
     title: "첫 스프링캠프",
@@ -38,12 +39,12 @@ export const CAREER_EVENTS: GameEvent[] = [
   },
   {
     id: "rk-rookie-race",
+    leagues: ["KBO", "NPB", "MLB"],
     phases: [2],
     tag: "신인왕 경쟁",
     title: "신인왕 레이스",
     body: "기자단 투표가 한 달 앞입니다. 경쟁자는 옆 동네 구단의 그 선수입니다.",
-    maxSeason: 1,
-    when: (s) => LEAGUES[s.contract.league].tier >= 3 && edge(s) >= -3,
+    when: (s) => !s.seasons.some(r => ["KBO", "NPB", "MLB"].includes(r.league)) && edge(s) >= -3,
     choices: [
       {
         label: "매 경기 전력으로 붙는다",
@@ -51,7 +52,7 @@ export const CAREER_EVENTS: GameEvent[] = [
         risk: "도전",
         outcomes: [
           { weight: 3, effect: { fame: 22, morale: 12, health: -14, attrs: { mental: 2 }, text: "9월을 불태웠습니다. 표가 당신 쪽으로 기울었습니다.", tone: "good" } },
-          { weight: 2, effect: { fame: 4, health: -18, morale: -10, text: "무리한 만큼 성적이 떨어졌습니다. 신인왕은 남의 것이 됐습니다.", tone: "bad" } },
+          { weight: 2, effect: { fame: 4, health: -18, morale: -10, text: "무리한 만큼 성적이 떨어졌습니다. 남은 경쟁이 더 어려워졌습니다.", tone: "bad" } },
         ],
       },
       {
@@ -69,16 +70,16 @@ export const CAREER_EVENTS: GameEvent[] = [
     phases: [1],
     tag: "루키",
     title: "숙소의 밤",
-    body: "2군 숙소의 밤은 깁니다. 같은 방 동기는 이미 잠들었고, 당신은 천장을 봅니다.",
+    body: "선수 숙소의 밤은 깁니다. 같은 방 동기는 이미 잠들었고, 당신은 천장을 봅니다.",
     maxSeason: 2,
     when: (s) => LEAGUES[s.contract.league].tier <= 2,
     choices: [
       {
-        label: "새벽까지 배트를 돌린다",
+        label: "새벽까지 개인 훈련을 한다",
         hint: "성장 · 체력 소모",
         risk: "도전",
         outcomes: [
-          { weight: 3, effect: { focus: "strength", health: -10, morale: -4, text: "손에 물집이 잡혔습니다. 그래도 공이 맞기 시작했습니다.", tone: "good" } },
+          { weight: 3, effect: { focus: "strength", health: -10, morale: -4, text: "반복 훈련 끝에 동작이 조금 익숙해졌습니다. 피로도 쌓였습니다.", tone: "good" } },
           { weight: 1, effect: { health: -16, morale: -12, text: "몸만 축났습니다. 요령 없는 노력은 배신하기도 합니다.", tone: "bad" } },
         ],
       },
@@ -94,6 +95,7 @@ export const CAREER_EVENTS: GameEvent[] = [
   },
   {
     id: "rk-first-salary",
+    once: true,
     phases: [4],
     tag: "연봉 협상",
     title: "첫 연봉 협상",
@@ -124,21 +126,22 @@ export const CAREER_EVENTS: GameEvent[] = [
   /* ══════════ 3~8년차 · 자리 잡기 ══════════ */
   {
     id: "mid-starter-fight",
+    for: "batter",
     phases: [0],
     tag: "주전 경쟁",
     title: "자리를 두고 붙는다",
-    body: "구단이 같은 포지션에 외국인 선수를 데려왔습니다. 개막 엔트리는 둘 중 하나입니다.",
+    body: "같은 포지션의 경쟁자가 캠프에서 좋은 모습을 보입니다. 출전 기회를 두고 경쟁이 치열합니다.",
     minSeason: 3,
     maxSeason: 8,
     when: (s) => edge(s) < 5,
     choices: [
       {
         label: "정면으로 경쟁한다",
-        hint: "이기면 주전 · 지면 벤치",
+        hint: "성장·신뢰 상승 또는 자신감 하락",
         risk: "도전",
         outcomes: [
-          { weight: 3, effect: { focus: "strength", teamTrust: 14, morale: 12, text: "시범경기에서 압도했습니다. 자리는 당신 것입니다.", tone: "good" } },
-          { weight: 2, effect: { morale: -16, teamTrust: -6, text: "밀렸습니다. 개막을 벤치에서 맞습니다.", tone: "bad" } },
+          { weight: 3, effect: { focus: "strength", teamTrust: 14, morale: 12, text: "시범경기에서 압도했습니다. 코치에게 좋은 평가를 받았습니다.", tone: "good" } },
+          { weight: 2, effect: { morale: -16, teamTrust: -6, text: "밀렸습니다. 더 준비하라는 평가를 받았습니다.", tone: "bad" } },
         ],
       },
       {
@@ -146,13 +149,14 @@ export const CAREER_EVENTS: GameEvent[] = [
         hint: "유틸리티 · 출전 기회 확보",
         risk: "안정",
         outcomes: [
-          { weight: 1, effect: { attrs: { defense: 3, mental: 2 }, teamTrust: 12, text: "여러 자리를 소화하며 라인업에 남았습니다.", tone: "good" } },
+          { weight: 1, effect: { attrs: { defense: 3, mental: 2 }, teamTrust: 12, text: "추가 수비 훈련으로 활용 가능성을 보여줬습니다.", tone: "good" } },
         ],
       },
     ],
   },
   {
     id: "mid-marriage",
+    duringRehab: true,
     phases: [4],
     tag: "개인사",
     title: "인생의 결정",
@@ -173,7 +177,7 @@ export const CAREER_EVENTS: GameEvent[] = [
         hint: "훈련 집중 · 관계 위험",
         risk: "도전",
         outcomes: [
-          { weight: 2, effect: { focus: "strength", morale: -8, text: "야구를 택했습니다. 대신 겨울 내내 배트를 놓지 않았습니다.", tone: "neutral" } },
+          { weight: 2, effect: { focus: "strength", morale: -8, text: "야구를 택했습니다. 대신 겨울 내내 훈련을 놓지 않았습니다.", tone: "neutral" } },
           { weight: 1, effect: { morale: -18, text: "그 사람은 떠났습니다. 야구는 남았지만 마음이 헛돕니다.", tone: "bad" } },
         ],
       },
@@ -181,6 +185,7 @@ export const CAREER_EVENTS: GameEvent[] = [
   },
   {
     id: "mid-arbitration",
+    leagues: ["KBO"],
     phases: [4],
     tag: "연봉조정",
     title: "연봉조정 신청",
@@ -212,7 +217,7 @@ export const CAREER_EVENTS: GameEvent[] = [
     phases: [4],
     tag: "스폰서",
     title: "용품 계약 제안",
-    body: "글러브와 배트를 대는 회사가 바뀔 수 있습니다. 조건은 좋지만 손에 익은 물건을 놓아야 합니다.",
+    body: "야구 용품을 지원하는 회사가 바뀔 수 있습니다. 조건은 좋지만 손에 익은 물건을 놓아야 합니다.",
     minSeason: 3,
     when: (s) => s.fame >= 40,
     choices: [
@@ -222,7 +227,7 @@ export const CAREER_EVENTS: GameEvent[] = [
         risk: "도전",
         outcomes: [
           { weight: 2, effect: { money: 2.5, fame: 8, text: "새 장비가 손에 붙었습니다. 통장도 두꺼워졌습니다.", tone: "good" } },
-          { weight: 2, effect: { money: 2.5, focus: "weakness", morale: -10, text: "장비가 어색합니다. 감각이 돌아오는 데 시간이 걸립니다.", tone: "bad" } },
+          { weight: 2, effect: { money: 2.5, morale: -10, text: "장비가 어색합니다. 감각이 돌아오는 데 시간이 걸립니다.", tone: "bad" } },
         ],
       },
       {
@@ -260,7 +265,7 @@ export const CAREER_EVENTS: GameEvent[] = [
         hint: "개인 성적 집중",
         risk: "안정",
         outcomes: [
-          { weight: 1, effect: { focus: "strength", teamTrust: -8, text: "완장 대신 배트를 들었습니다. 증명은 성적으로 합니다.", tone: "neutral" } },
+          { weight: 1, effect: { focus: "strength", teamTrust: -8, text: "주장직 대신 개인 훈련에 시간을 썼습니다. 증명은 성적으로 합니다.", tone: "neutral" } },
         ],
       },
     ],
@@ -269,8 +274,8 @@ export const CAREER_EVENTS: GameEvent[] = [
     id: "vet-milestone",
     phases: [2],
     tag: "대기록",
-    title: "통산 기록이 눈앞에",
-    body: "기록실 직원이 조용히 알려줍니다. 이번 시즌 안에 손에 닿는 숫자가 있다고.",
+    title: "오래 쌓은 기록의 무게",
+    body: "기록실에서 통산 성적을 정리한 자료를 건넵니다. 오래 쌓은 기록을 보니 한 번 더 힘을 내고 싶어집니다.",
     minSeason: 9,
     when: (s) => s.fame >= 45,
     choices: [
@@ -279,8 +284,8 @@ export const CAREER_EVENTS: GameEvent[] = [
         hint: "명성 · 체력 소모",
         risk: "도전",
         outcomes: [
-          { weight: 3, effect: { fame: 24, morale: 14, health: -12, text: "해냈습니다. 전광판에 숫자가 걸리고 관중이 일어섰습니다.", tone: "good" } },
-          { weight: 2, effect: { fame: 2, health: -16, morale: -12, text: "몇 개를 남기고 시즌이 끝났습니다. 내년에도 몸이 버텨줄지 모릅니다.", tone: "bad" } },
+          { weight: 3, effect: { fame: 24, morale: 14, health: -12, text: "기록을 돌아본 일이 동기부여가 됐습니다. 훈련에 집중할 힘이 생겼습니다.", tone: "good" } },
+          { weight: 2, effect: { fame: 2, health: -16, morale: -12, text: "기록을 의식하다 몸에 무리가 왔습니다. 페이스를 다시 조절해야 합니다.", tone: "bad" } },
         ],
       },
       {
@@ -295,6 +300,7 @@ export const CAREER_EVENTS: GameEvent[] = [
   },
   {
     id: "vet-bench-role",
+    for: "batter",
     phases: [0],
     tag: "역할 변화",
     title: "벤치로 밀려나다",
@@ -323,6 +329,7 @@ export const CAREER_EVENTS: GameEvent[] = [
   },
   {
     id: "vet-coach-offer",
+    duringRehab: true,
     phases: [4],
     tag: "제2의 커리어",
     title: "코치 제안",
@@ -350,6 +357,7 @@ export const CAREER_EVENTS: GameEvent[] = [
   },
   {
     id: "vet-farewell",
+    once: true,
     phases: [2],
     tag: "마지막",
     title: "은퇴 투어",

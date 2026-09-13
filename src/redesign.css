@@ -1,0 +1,87 @@
+/* 커리어 플레이의 읽기 순서: 시즌 → 사건 → 선택 → 결과 → 상세 기록 */
+.season-context {display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:20px;}
+.season-context h2 {font-size:26px;margin:6px 0 0;letter-spacing:-1px;}
+.season-context h2 small {font-size:13px;color:var(--muted);font-weight:500;letter-spacing:0;margin-left:8px;}
+.season-context>.chip {white-space:normal;text-align:right;line-height:1.6;}
+.event {border-radius:20px;background:linear-gradient(140deg,#14253b,#101b2c);box-shadow:0 12px 40px #0002;animation:none;scroll-margin-top:160px;}
+.event-heading {display:flex;gap:12px;justify-content:space-between;align-items:center;flex-wrap:wrap;}
+.event-heading>span:last-child {font-size:11px;color:var(--muted);}
+.event h3 {font-size:clamp(22px,3vw,30px);line-height:1.4;letter-spacing:-.7px;}
+.event>p {max-width:68ch;line-height:1.9;word-break:keep-all;overflow-wrap:anywhere;}
+.headline.awaiting-choice {padding:10px 0;margin-bottom:16px;background:none;border:0;box-shadow:none;}
+.awaiting-choice h2,.awaiting-choice p {display:none;}
+.awaiting-choice .status {color:var(--gold);}
+.choice-number {display:inline-block;color:var(--gold);font-size:12px;font-weight:500;margin-right:12px;font-variant-numeric:tabular-nums;}
+.choices button {border-radius:14px;background:#0c1728;transition:background .15s,border-color .15s;}
+.choices button:focus-visible {outline:3px solid var(--gold);outline-offset:3px;}
+.choices button:hover {background:#1a2b42;border-color:#b2c7e066;}
+.career-details {margin:22px 0;border:1px solid #8da8c326;border-radius:16px;overflow:hidden;}
+.career-details>summary {cursor:pointer;padding:18px 20px;font-weight:600;line-height:1.5;min-height:52px;}
+.career-details>summary span {display:block;margin-top:4px;color:var(--muted);font-size:12px;font-weight:400;}
+.career-details[open]>summary {border-bottom:1px solid #8da8c326;margin-bottom:16px;}
+.career-details>.card,.career-details>.grid-2 {margin:16px;}
+.career-details .grid-2 .card {margin-bottom:0;}
+.continue-panel {padding:20px;border:1px solid #ebbf6966;background:#e0b6570b;border-radius:16px;margin-bottom:28px;}
+.continue-panel h2 {font-size:20px;margin:8px 0 16px;}
+.setup-copy {position:relative;overflow:hidden;isolation:isolate;}
+.record-controls {display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-bottom:16px;font-size:12px;}
+.record-controls label {display:flex;align-items:center;gap:10px;}
+.record-controls select {background:#142239;color:var(--text);border:1px solid #8da8c344;border-radius:8px;min-height:44px;padding:8px;font-size:16px;max-width:180px;}
+.record-controls .btn {min-height:44px;padding:8px 12px;font-size:12px;}
+.record-controls>span {color:var(--muted);}
+.setup-copy::before {content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(0deg,#08111fee,#08111f77),var(--setup-art) center/cover;opacity:.55;}
+.setup-copy h1 {font-size:clamp(36px,4.5vw,64px);}
+.contract-baseline {display:flex;flex-wrap:wrap;gap:8px 18px;padding:16px 18px;margin:0 0 20px;border:1px solid #8da8c330;border-radius:12px;font-size:13px;line-height:1.7;background:#142239;}
+.contract-baseline b {color:var(--gold);}
+.contract-baseline small {width:100%;color:var(--muted);}
+.sheet-head h2 {line-height:1.4;}
+.offer {border-radius:16px;}
+.sheet {border-radius:22px;}
+button:focus-visible,summary:focus-visible {outline:2px solid var(--gold);outline-offset:3px;}
+@media(max-width:620px) {
+  .app {padding-bottom:calc(78px + env(safe-area-inset-bottom));}
+  .topbar {flex-wrap:nowrap;min-height:62px;gap:8px;padding:8px 12px;}
+  .topbar .brand {flex:1;white-space:nowrap;font-size:11px;}
+  .topbar .brand small {display:none;}
+  .topbar .topbar-right {width:auto;flex-wrap:nowrap;gap:8px;}
+  .topbar .clock {display:none;}
+  .speed button {padding:5px 7px;min-width:40px;font-size:11px;}
+  .help-btn {flex:none;min-width:40px;min-height:44px;}
+  .topbar nav {position:fixed;top:auto;bottom:0;left:0;right:0;z-index:40;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));height:auto;min-height:66px;margin:0;padding:6px 8px calc(6px + env(safe-area-inset-bottom));background:#0c1729f5;border-top:1px solid #8da8c333;box-shadow:0 -8px 25px #0003;backdrop-filter:blur(16px);}
+  .topbar nav button {position:relative;min-width:0;min-height:50px;margin:0;padding:8px 3px;border:0;border-radius:12px;font-size:12px;white-space:normal;}
+  .topbar nav button.on {background:#e9bb6018;color:var(--gold);}
+  .topbar nav button.on::after {content:"";position:absolute;bottom:5px;left:calc(50% - 10px);width:20px;height:2px;background:var(--gold);}
+  .playerbar {margin:0;padding:14px 16px;border-radius:0;background:#111e30;border-bottom:1px solid #8da8c320;}
+  .mstrip {margin:0;border-radius:0;padding:12px 16px;background:#0d192b;}
+  .body {padding:20px 12px 12px;}
+  .season-context {gap:8px;margin-bottom:16px;align-items:flex-start;}
+  .season-context h2 {font-size:23px;}
+  .season-context h2 small {display:block;margin:4px 0 0;font-size:12px;}
+  .season-context>.chip {font-size:11px;max-width:45%;}
+  .stepper {margin-bottom:14px;}
+  .event {padding:18px 14px;}
+  .event h3 {margin-top:12px;}
+  .event>p {font-size:15px;line-height:1.85;}
+  .choices {gap:12px;}
+  .choices button {padding:14px;min-height:100px;}
+  .choices button b {font-size:15px;}
+  .choices button>.risk {font-size:11px;}
+  .risk-legend {font-size:11px!important;color:var(--muted);}
+  .headline,#event-title,.event {scroll-margin-top:84px;}
+  .headline:not(.awaiting-choice) {padding:18px 16px;}
+  .headline h2 {font-size:21px;line-height:1.5;}
+  .headline-actions {display:grid;grid-template-columns:1fr;gap:8px;}
+  .headline-actions .btn.primary {min-height:52px;}
+  .career-details>summary {padding:16px;}
+  .career-details>.card,.career-details>.grid-2 {margin:10px;}
+  .career-details .card {padding:14px;}
+  .contract-baseline {font-size:12px;padding:12px;}
+  .sheet {border-radius:18px 18px 0 0;padding:20px 16px calc(20px + env(safe-area-inset-bottom));}
+  .modal {padding-top:12px;}
+  .toasts {bottom:calc(80px + env(safe-area-inset-bottom));}
+  .setup-copy {padding:30px 20px;}
+  .setup-copy h1 {font-size:36px;}
+  .setup-copy .odds {display:none;}
+  .setup-copy>p {font-size:14px;}
+  .continue-panel {padding:16px;}
+}

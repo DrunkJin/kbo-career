@@ -40,32 +40,33 @@ export const POSITION_EVENTS: GameEvent[] = [
     id: "p-bullpen-switch",
     phases: [0],
     tag: "투수",
-    title: "불펜 전환 제안",
-    body: "선발 자리가 모자랍니다. 구단은 짧게 강하게 던지는 쪽을 권합니다.",
+    title: "짧은 이닝을 위한 훈련",
+    body: "투수코치가 짧은 이닝에 힘을 집중하는 훈련을 권합니다. 긴 이닝을 준비하는 방법과는 다릅니다.",
     positions: ["투수"],
     when: (s) => s.attrs.stamina < 62 || edge(s) < -2,
     choices: [
       {
-        label: "불펜으로 간다",
-        hint: "구속 상승 · 이닝 감소",
+        label: "짧고 강하게 던지는 훈련",
+        hint: "구속·구위 상승 · 지구력 감소",
         risk: "안정",
         outcomes: [
-          { weight: 1, effect: { attrs: { velocity: 4, movement: 2, stamina: -2 }, teamTrust: 12, text: "한 이닝만 전력으로. 구속이 2km 올라갔습니다.", tone: "good" } },
+          { weight: 1, effect: { attrs: { velocity: 4, movement: 2, stamina: -2 }, teamTrust: 12, text: "힘을 짧게 집중하는 동작을 익혔습니다. 공에 힘이 붙었습니다.", tone: "good" } },
         ],
       },
       {
-        label: "선발로 남겠다고 버틴다",
+        label: "긴 이닝을 위한 체력을 기른다",
         hint: "이닝 유지 · 경쟁",
         risk: "도전",
         outcomes: [
-          { weight: 2, effect: { attrs: { stamina: 5, mental: 2 }, morale: 10, text: "긴 이닝을 던져내며 로테이션을 지켰습니다.", tone: "good" } },
-          { weight: 2, effect: { teamTrust: -12, morale: -10, text: "고집은 통하지 않았습니다. 2군 조정 통보를 받았습니다.", tone: "bad" } },
+          { weight: 2, effect: { attrs: { stamina: 5, mental: 2 }, morale: 10, text: "투구 지구력이 좋아졌습니다. 긴 이닝에 도전할 준비가 됐습니다.", tone: "good" } },
+          { weight: 2, effect: { teamTrust: -12, morale: -10, text: "훈련 방향을 두고 코치와 충돌했습니다. 다시 계획을 맞춰야 합니다.", tone: "bad" } },
         ],
       },
     ],
   },
   {
     id: "p-nohit",
+    roles: ["선발"],
     phases: [2],
     tag: "투수",
     title: "7회까지 노히트",
@@ -98,16 +99,16 @@ export const POSITION_EVENTS: GameEvent[] = [
     id: "c-framing",
     phases: [0],
     tag: "포수",
-    title: "프레이밍 특훈",
-    body: "볼을 스트라이크로 만드는 기술. 눈에 띄지 않지만 한 시즌에 수십 점을 좌우합니다.",
+    title: "포구와 블로킹 특훈",
+    body: "공을 안정적으로 받고 낮은 공을 막는 기술. 판정 방식과 관계없이 배터리를 지탱하는 기본기입니다.",
     positions: ["포수"],
     choices: [
       {
-        label: "프레이밍에 겨울을 쓴다",
+        label: "포구와 블로킹에 캠프를 쓴다",
         hint: "수비 대폭 · 타격 정체",
         risk: "안정",
         outcomes: [
-          { weight: 1, effect: { attrs: { defense: 6, mental: 2 }, text: "심판의 손이 올라가는 횟수가 달라졌습니다. 투수들이 당신을 찾습니다.", tone: "good" } },
+          { weight: 1, effect: { attrs: { defense: 6, mental: 2 }, text: "빠지는 공이 줄었습니다. 투수들이 자신 있게 낮은 코스로 승부합니다.", tone: "good" } },
         ],
       },
       {
@@ -162,7 +163,7 @@ export const POSITION_EVENTS: GameEvent[] = [
         hint: "수명 연장 · 포수 가치 하락",
         risk: "안정",
         outcomes: [
-          { weight: 1, effect: { attrs: { durability: 5, defense: -2 }, health: 16, text: "무릎을 아꼈습니다. 커리어가 몇 년 늘었습니다.", tone: "good" } },
+          { weight: 1, effect: { attrs: { durability: 5, defense: -2 }, health: 16, text: "무릎 부담을 줄이는 훈련을 했습니다. 더 오래 뛰기 위한 준비입니다.", tone: "good" } },
         ],
       },
       {

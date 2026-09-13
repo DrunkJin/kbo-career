@@ -8,6 +8,7 @@ export const TEAM_EVENTS: GameEvent[] = [
   /* ══════════════════ KBO ══════════════════ */
   {
     id: "t-lg",
+    leagues: ["KBO"],
     phases: [1],
     tag: "잠실",
     title: "잠실의 함성",
@@ -15,7 +16,7 @@ export const TEAM_EVENTS: GameEvent[] = [
     teams: ["LG 트윈스"],
     choices: [
       {
-        label: "관중석을 향해 배트를 들어 보인다",
+        label: "관중석을 향해 손을 들어 보인다",
         hint: "명성 · 팬심",
         risk: "도전",
         outcomes: [
@@ -24,17 +25,18 @@ export const TEAM_EVENTS: GameEvent[] = [
         ],
       },
       {
-        label: "조용히 다음 타석을 준비한다",
+        label: "조용히 다음 플레이를 준비한다",
         hint: "집중력",
         risk: "안정",
         outcomes: [
-          { weight: 1, effect: { attrs: { mental: 3, contact: 1, control: 1 }, text: "환호를 등지고 배팅 케이지로 갔습니다. 프로답습니다.", tone: "good" } },
+          { weight: 1, effect: { attrs: { mental: 3, contact: 1, control: 1 }, text: "환호를 뒤로하고 준비 운동을 이어갔습니다. 프로답습니다.", tone: "good" } },
         ],
       },
     ],
   },
   {
     id: "t-hanwha",
+    leagues: ["KBO"],
     phases: [2],
     tag: "대전",
     title: "그래도 남아 있는 사람들",
@@ -61,6 +63,7 @@ export const TEAM_EVENTS: GameEvent[] = [
   },
   {
     id: "t-samsung",
+    leagues: ["KBO"],
     phases: [0],
     tag: "대구",
     title: "왕조의 기억",
@@ -88,6 +91,8 @@ export const TEAM_EVENTS: GameEvent[] = [
   },
   {
     id: "t-doosan",
+    leagues: ["KBO"],
+    minSeason: 3,
     phases: [0],
     tag: "화수분",
     title: "끝없이 올라오는 후배들",
@@ -115,6 +120,8 @@ export const TEAM_EVENTS: GameEvent[] = [
   },
   {
     id: "t-ssg",
+    leagues: ["KBO"],
+    for: "batter",
     phases: [1],
     tag: "문학",
     title: "홈런 공장",
@@ -142,6 +149,7 @@ export const TEAM_EVENTS: GameEvent[] = [
   },
   {
     id: "t-lotte",
+    leagues: ["KBO"],
     phases: [2],
     tag: "사직",
     title: "부산 갈매기",
@@ -169,10 +177,11 @@ export const TEAM_EVENTS: GameEvent[] = [
   },
   {
     id: "t-kt",
+    leagues: ["KBO"],
     phases: [0],
     tag: "수원",
     title: "젊은 구단의 기틀",
-    body: "역사가 짧은 만큼 만들어갈 것이 많습니다. 구단이 당신에게 팀 컬러를 묻습니다.",
+    body: "기존의 성과 위에 새롭게 만들어갈 것이 많습니다. 구단이 당신에게 팀 컬러를 묻습니다.",
     teams: ["KT 위즈"],
     choices: [
       {
@@ -188,7 +197,7 @@ export const TEAM_EVENTS: GameEvent[] = [
         hint: "전방위 성장 · 체력 소모",
         risk: "도전",
         outcomes: [
-          { weight: 3, effect: { focus: "strength", teamTrust: 14, health: -10, text: "훈련량으로 팀 문화를 만들었습니다. 후배들이 따라옵니다.", tone: "good" } },
+          { weight: 3, effect: { focus: "strength", teamTrust: 14, health: -10, text: "동료와 훈련을 이어가며 서로 자극을 받았습니다.", tone: "good" } },
           { weight: 2, effect: { health: -16, morale: -8, text: "방향 없는 훈련량은 몸만 상하게 했습니다.", tone: "bad" } },
         ],
       },
@@ -196,6 +205,7 @@ export const TEAM_EVENTS: GameEvent[] = [
   },
   {
     id: "t-kia",
+    leagues: ["KBO"],
     phases: [1],
     tag: "광주",
     title: "타이거즈의 이름",
@@ -207,7 +217,7 @@ export const TEAM_EVENTS: GameEvent[] = [
         hint: "멘탈·신뢰",
         risk: "안정",
         outcomes: [
-          { weight: 1, effect: { attrs: { mental: 4 }, teamTrust: 14, fame: 8, text: "이 줄무늬가 무엇을 뜻하는지 알게 됐습니다. 어깨가 펴집니다.", tone: "good" } },
+          { weight: 1, effect: { attrs: { mental: 4 }, teamTrust: 14, fame: 8, text: "이 유니폼이 무엇을 뜻하는지 알게 됐습니다. 어깨가 펴집니다.", tone: "good" } },
         ],
       },
       {
@@ -223,10 +233,11 @@ export const TEAM_EVENTS: GameEvent[] = [
   },
   {
     id: "t-nc",
+    leagues: ["KBO"],
     phases: [0],
     tag: "창원",
     title: "데이터 리포트",
-    body: "구단이 당신의 타구 각도와 회전수를 정리한 20쪽짜리 자료를 건넵니다.",
+    body: "구단이 당신의 동작과 경기 데이터를 정리한 20쪽짜리 자료를 건넵니다.",
     teams: ["NC 다이노스"],
     choices: [
       {
@@ -243,13 +254,14 @@ export const TEAM_EVENTS: GameEvent[] = [
         hint: "강점 유지",
         risk: "안정",
         outcomes: [
-          { weight: 1, effect: { focus: "strength", morale: 6, text: "자료는 읽되 몸이 아는 대로 쳤습니다. 잘하던 것이 더 좋아졌습니다.", tone: "good" } },
+          { weight: 1, effect: { focus: "strength", morale: 6, text: "자료는 읽되 몸에 익은 동작을 다듬었습니다. 잘하던 것이 더 좋아졌습니다.", tone: "good" } },
         ],
       },
     ],
   },
   {
     id: "t-kiwoom",
+    leagues: ["KBO"],
     phases: [2],
     tag: "고척",
     title: "트레이드 시장의 큰손",
@@ -279,6 +291,7 @@ export const TEAM_EVENTS: GameEvent[] = [
   /* ══════════════════ NPB ══════════════════ */
   {
     id: "t-yomiuri",
+    leagues: ["NPB"],
     phases: [0],
     tag: "도쿄돔",
     title: "거인군의 무게",
@@ -286,11 +299,11 @@ export const TEAM_EVENTS: GameEvent[] = [
     teams: ["요미우리 자이언츠"],
     choices: [
       {
-        label: "중심타자 역할을 자청한다",
+        label: "팀의 핵심 역할에 도전한다",
         hint: "명성 대폭 · 압박",
         risk: "도전",
         outcomes: [
-          { weight: 3, effect: { fame: 22, teamTrust: 14, attrs: { mental: 3 }, morale: -4, text: "일본 전역이 당신의 타석을 봅니다. 기대에 걸맞게 쳤습니다.", tone: "good" } },
+          { weight: 3, effect: { fame: 22, teamTrust: 14, attrs: { mental: 3 }, morale: -4, text: "큰 관심 속에서도 준비한 기량을 보여줬습니다.", tone: "good" } },
           { weight: 2, effect: { fame: -10, morale: -16, text: "스포츠지 1면이 매일 당신을 다뤘습니다. 좋은 쪽이 아니었습니다.", tone: "bad" } },
         ],
       },
@@ -306,6 +319,7 @@ export const TEAM_EVENTS: GameEvent[] = [
   },
   {
     id: "t-hanshin",
+    leagues: ["NPB"],
     phases: [1],
     tag: "고시엔",
     title: "한신 팬의 열기",
@@ -317,7 +331,7 @@ export const TEAM_EVENTS: GameEvent[] = [
         hint: "멘탈·명성",
         risk: "안정",
         outcomes: [
-          { weight: 1, effect: { fame: 16, morale: 18, attrs: { mental: 3 }, text: "칠 때마다 구장이 흔들렸습니다. 이런 야구도 있습니다.", tone: "good" } },
+          { weight: 1, effect: { fame: 16, morale: 18, attrs: { mental: 3 }, text: "좋은 플레이가 나올 때마다 구장이 흔들렸습니다. 이런 야구도 있습니다.", tone: "good" } },
         ],
       },
       {
@@ -332,6 +346,7 @@ export const TEAM_EVENTS: GameEvent[] = [
   },
   {
     id: "t-softbank",
+    leagues: ["NPB"],
     phases: [0],
     tag: "후쿠오카",
     title: "두꺼운 선수층",
@@ -352,7 +367,7 @@ export const TEAM_EVENTS: GameEvent[] = [
         hint: "틈새 공략 · 안정",
         risk: "안정",
         outcomes: [
-          { weight: 1, effect: { attrs: { defense: 3, mental: 3, control: 2 }, teamTrust: 12, text: "대수비와 대타로 자리를 잡았습니다. 쓰임새가 분명해졌습니다.", tone: "good" } },
+          { weight: 1, effect: { attrs: { defense: 3, mental: 3, control: 2 }, teamTrust: 12, text: "필요한 상황에 집중하며 코치에게 활용 가능성을 보여줬습니다.", tone: "good" } },
         ],
       },
     ],
@@ -361,6 +376,7 @@ export const TEAM_EVENTS: GameEvent[] = [
   /* ══════════════════ MLB ══════════════════ */
   {
     id: "t-yankees",
+    leagues: ["MLB"],
     phases: [0],
     tag: "New York",
     title: "핀스트라이프의 규율",
@@ -388,6 +404,7 @@ export const TEAM_EVENTS: GameEvent[] = [
   },
   {
     id: "t-dodgers",
+    leagues: ["MLB"],
     phases: [1],
     tag: "Los Angeles",
     title: "할리우드의 밤",
@@ -408,13 +425,15 @@ export const TEAM_EVENTS: GameEvent[] = [
         hint: "성장 · 체력 유지",
         risk: "안정",
         outcomes: [
-          { weight: 1, effect: { focus: "strength", health: 8, teamTrust: 10, text: "초대장을 전부 접었습니다. 대신 타격 케이지에서 살았습니다.", tone: "good" } },
+          { weight: 1, effect: { focus: "strength", health: 8, teamTrust: 10, text: "초대장을 전부 접었습니다. 대신 훈련장에서 시간을 보냈습니다.", tone: "good" } },
         ],
       },
     ],
   },
   {
     id: "t-redsox",
+    leagues: ["MLB"],
+    for: "batter",
     phases: [1],
     tag: "Boston",
     title: "그린 몬스터",

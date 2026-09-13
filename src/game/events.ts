@@ -84,7 +84,7 @@ const BASE_EVENTS: GameEvent[] = [
         hint: "성장 폭 크지만 팀 내 고립 위험",
         risk: "도전",
         outcomes: [
-          { weight: 1, effect: { attrs: { mental: 4 }, morale: 8, teamTrust: -8, text: "당돌함이 오히려 신뢰를 얻었습니다. 당신은 당신입니다.", tone: "good" } },
+          { weight: 1, effect: { attrs: { mental: 4 }, morale: 8, teamTrust: -8, text: "당돌함이 자신감으로 이어졌습니다. 당신은 당신입니다.", tone: "good" } },
           { weight: 1, effect: { teamTrust: -18, morale: -6, text: "라커룸의 공기가 차가워졌습니다.", tone: "bad" } },
         ],
       },
@@ -95,14 +95,14 @@ const BASE_EVENTS: GameEvent[] = [
     for: "batter",
     phases: [0],
     tag: "구단 요청",
-    title: "포지션 변경 제안",
+    title: "추가 수비 훈련 제안",
     body: "구단이 자리 하나를 비워두고 당신을 바라봅니다. 익숙한 자리를 떠나면 출전 기회가 늘어납니다.",
     when: (s) => edge(s) < 1 && s.seasons.length >= 1,
     choices: [
-      sure("팀이 필요한 자리로 간다", "수비 + 팀 신뢰 · 주 능력치 소폭 정체", "안정", {
+      sure("팀이 필요한 자리로 간다", "수비 + 팀 신뢰 · 추가 수비 훈련", "안정", {
         attrs: { defense: 4, mental: 1 },
         teamTrust: 14,
-        text: "새 포지션에서 출전 시간을 확보했습니다.",
+        text: "새 수비 동작을 익혔습니다. 출전 기회를 넓힐 준비입니다.",
         tone: "good",
       }),
       sure("내 자리를 지키고 경쟁한다", "주전 경쟁 · 신뢰 하락", "도전", {
@@ -119,14 +119,14 @@ const BASE_EVENTS: GameEvent[] = [
     for: "pitcher",
     phases: [0],
     tag: "구단 요청",
-    title: "보직 전환 제안",
-    body: "투수코치가 당신을 부릅니다. \"불펜에 네 자리가 있다. 선발 자리는 지금 꽉 찼어.\"",
+    title: "투구 방향 논의",
+    body: "투수코치가 당신을 부릅니다. \"짧고 강하게 던질지, 긴 이닝을 준비할지 훈련 방향을 정하자.\"",
     when: (s) => edge(s) < 1 && s.seasons.length >= 1,
     choices: [
-      sure("불펜으로 간다", "구위·팀 신뢰 상승 · 체력 성장 정체", "안정", {
+      sure("짧은 이닝에 맞춰 훈련한다", "구위·팀 신뢰 상승 · 체력 성장 정체", "안정", {
         attrs: { movement: 3, velocity: 1 },
         teamTrust: 14,
-        text: "짧은 이닝에 전력을 쏟는 법을 배웠습니다. 등판 기회가 늘었습니다.",
+        text: "짧은 이닝에 전력을 쏟는 법을 배웠습니다. 짧은 이닝을 맡을 준비가 됐습니다.",
         tone: "good",
       }),
       sure("선발 경쟁을 계속한다", "체력 상승 · 신뢰 하락", "도전", {
@@ -173,7 +173,7 @@ const BASE_EVENTS: GameEvent[] = [
     choices: [
       sure("리드오프. 출루로 승부한다", "선구안·주루 상승", "안정", {
         attrs: { eye: 3, speed: 2 },
-        text: "1번 타자. 매 경기 첫 타석이 당신 몫입니다.",
+        text: "리드오프를 목표로 출루와 주루 훈련을 이어갔습니다.",
         tone: "good",
       }),
       {
@@ -250,8 +250,8 @@ const BASE_EVENTS: GameEvent[] = [
             weight: 2,
             effect: {
               fame: 6, health: -16,
-              intl: { result: "4강 탈락", medal: "동", note: "주전 출전" },
-              text: "동메달. 아쉬움이 남는 대회였습니다.",
+              intl: { result: "4강 탈락", medal: "", note: "주전 출전" },
+              text: "4강에서 멈췄습니다. 아쉬움이 남는 대회였습니다.",
               tone: "neutral",
             },
           },
@@ -349,7 +349,7 @@ const BASE_EVENTS: GameEvent[] = [
     phases: [1],
     tag: "벤치클리어링",
     title: "빈볼 시비",
-    body: "상대 투수의 공이 등 뒤로 지나갔습니다. 양 팀 더그아웃이 술렁입니다.",
+    body: "상대 투수의 공이 등을 스쳤습니다. 양 팀 더그아웃이 술렁입니다.",
     choices: [
       {
         label: "마운드로 걸어나간다",
@@ -456,10 +456,11 @@ const BASE_EVENTS: GameEvent[] = [
   },
   {
     id: "half-callup",
+    leagues: ["KBO_F", "NPB_F", "AA", "AAA"],
     phases: [1],
     tag: "콜업",
-    title: "1군 콜업 통보",
-    body: "감독이 직접 전화했습니다. \"내일 1군 합류해라. 딱 2주 준다.\"",
+    title: "상위 팀의 평가 요청",
+    body: "감독이 최근 경기 영상을 상위 팀에 보내겠다고 합니다. 앞으로의 플레이를 지켜보겠다는 연락입니다.",
     when: (s) => LEAGUES[s.contract.league].tier <= 2 && s.ovr >= LEAGUES[s.contract.league].level + 5,
     choices: [
       {
@@ -467,8 +468,8 @@ const BASE_EVENTS: GameEvent[] = [
         hint: "명성·신뢰 큰 폭 변동",
         risk: "도전",
         outcomes: [
-          { weight: 2, effect: { fame: 18, teamTrust: 16, morale: 14, attrs: { mental: 3 }, text: "2주 동안 확실히 각인시켰습니다. 다음 콜업은 편도 티켓일 겁니다.", tone: "good" } },
-          { weight: 1, effect: { fame: -5, morale: -12, text: "수준 차이를 느꼈습니다. 다시 2군행 버스에 올랐습니다.", tone: "bad" } },
+          { weight: 2, effect: { fame: 18, teamTrust: 16, morale: 14, attrs: { mental: 3 }, text: "코치에게 좋은 평가를 받았습니다. 상위 팀의 관심을 이어갈 기회입니다.", tone: "good" } },
+          { weight: 1, effect: { fame: -5, morale: -12, text: "평가 부담에 플레이가 흔들렸습니다. 다음 기회를 준비해야 합니다.", tone: "bad" } },
         ],
       },
       sure("몸 상태를 지키며 조심스럽게", "안정적인 인상", "안정", {
@@ -485,7 +486,7 @@ const BASE_EVENTS: GameEvent[] = [
     phases: [1],
     tag: "마운드",
     title: "투구수 100개, 7회 2사",
-    body: "감독이 더그아웃 계단에 발을 올렸습니다. 완투까지 아웃카운트 일곱 개가 남았습니다.",
+    body: "감독이 더그아웃 계단에 발을 올렸습니다. 완투까지 아웃카운트 네 개가 남았습니다.",
     when: (s) => roleFor(s) === "선발",
     choices: [
       {
@@ -511,7 +512,7 @@ const BASE_EVENTS: GameEvent[] = [
     phases: [1],
     tag: "주루",
     title: "그린라이트",
-    body: "1루. 상대 투수의 견제가 느립니다. 감독이 당신의 판단에 맡겼습니다.",
+    body: "2사 1루. 상대 투수의 견제가 느립니다. 감독이 당신의 판단에 맡겼습니다.",
     when: (s) => s.attrs.speed >= 55,
     choices: [
       {
@@ -532,6 +533,7 @@ const BASE_EVENTS: GameEvent[] = [
   },
   {
     id: "half-sns",
+    minAge: 21,
     phases: [1],
     tag: "SNS",
     title: "새벽의 게시물",
@@ -595,17 +597,18 @@ const BASE_EVENTS: GameEvent[] = [
   },
   {
     id: "dead-race",
+    leagues: ["KBO", "NPB", "MLB"],
     phases: [2],
     tag: "순위 싸움",
     title: "가을야구 경쟁",
-    body: "팀은 반 경기 차 승부에 놓였습니다. 감독은 당신을 매 경기 내보낼 생각입니다.",
+    body: "팀은 반 경기 차 승부에 놓였습니다. 감독은 남은 일정에서 당신의 역할을 강조합니다.",
     variants: [
-      { body: "잔여 경기 20. 5위와 반 경기 차. 감독은 당신을 매 경기 내보낼 생각입니다." },
+      { body: "잔여 경기가 줄어들수록 순위 싸움도 치열해집니다. 감독은 남은 일정에서 당신의 역할을 강조합니다." },
       { body: "9월 첫날, 순위표가 매일 바뀝니다. 벤치 분위기가 팽팽합니다." },
     ],
     choices: [
       {
-        label: "전 경기 출전을 자청한다",
+        label: "남은 일정에 전력을 쏟는다",
         hint: "신뢰·명성 상승 · 체력 소모 큼",
         risk: "도전",
         outcomes: [
@@ -672,7 +675,7 @@ const BASE_EVENTS: GameEvent[] = [
     phases: [2],
     tag: "결정적 순간",
     title: "9회말 2사 만루",
-    body: "한 점 차. 타석에 당신이 섰습니다. 만원 관중이 일어섰습니다.",
+    body: "한 점 뒤진 상황. 타석에 당신이 섰습니다. 만원 관중이 일어섰습니다.",
     when: (s) => edge(s) >= -2,
     choices: [
       {
@@ -694,11 +697,12 @@ const BASE_EVENTS: GameEvent[] = [
   },
   {
     id: "dead-clutch-pit",
+    roles: ["불펜", "마무리"],
     for: "pitcher",
     phases: [2],
     tag: "결정적 순간",
     title: "9회말 2사 만루, 마운드",
-    body: "한 점 차. 상대 4번 타자. 감독은 교체 없이 당신에게 맡겼습니다.",
+    body: "한 점 앞선 상황. 상대 4번 타자. 감독은 교체 없이 당신에게 맡겼습니다.",
     when: (s) => edge(s) >= -2,
     choices: [
       {
@@ -713,13 +717,14 @@ const BASE_EVENTS: GameEvent[] = [
       sure("유인구로 승부를 피한다", "무난한 결과", "안정", {
         attrs: { control: 2, mental: 1 },
         morale: -2,
-        text: "볼넷 밀어내기. 다음 타자에게 공을 넘기고 내려왔습니다.",
+        text: "볼넷 밀어내기. 동점이 된 뒤 구원 투수에게 마운드를 넘겼습니다.",
         tone: "neutral",
       }),
     ],
   },
   {
     id: "dead-closer",
+    roles: ["불펜"],
     for: "pitcher",
     phases: [2],
     tag: "보직",
@@ -746,6 +751,7 @@ const BASE_EVENTS: GameEvent[] = [
   },
   {
     id: "dead-hr-race",
+    leagues: ["KBO", "NPB", "MLB"],
     for: "batter",
     phases: [2],
     tag: "타이틀",
@@ -758,7 +764,7 @@ const BASE_EVENTS: GameEvent[] = [
         hint: "파워·명성 상승 · 컨택 하락",
         risk: "도전",
         outcomes: [
-          { weight: 2, effect: { attrs: { power: 4, contact: -1 }, fame: 18, morale: 12, text: "타이틀을 가져왔습니다. 시상식에서 당신의 이름이 불렸습니다.", tone: "good" } },
+          { weight: 2, effect: { attrs: { power: 4, contact: -1 }, fame: 18, morale: 12, text: "장타 훈련의 성과가 보였습니다. 타이틀을 향한 자신감이 높아졌습니다.", tone: "good" } },
           { weight: 2, effect: { attrs: { contact: -3 }, fame: 4, morale: -8, text: "큰 스윙만 하다 마지막 주에 타율이 무너졌습니다.", tone: "bad" } },
         ],
       },
@@ -772,6 +778,7 @@ const BASE_EVENTS: GameEvent[] = [
   },
   {
     id: "dead-award-race",
+    leagues: ["KBO", "NPB", "MLB"],
     phases: [2],
     tag: "타이틀",
     title: "시즌 MVP 후보",
@@ -789,17 +796,18 @@ const BASE_EVENTS: GameEvent[] = [
         teamTrust: 14,
         attrs: { mental: 3 },
         fame: 6,
-        text: "표는 당신에게 갔습니다. 동료들이 가장 먼저 축하했습니다.",
+        text: "동료들이 팀을 먼저 생각하는 태도를 높이 평가했습니다.",
         tone: "good",
       }),
     ],
   },
   {
     id: "dead-fan-event",
+    duringRehab: true,
     phases: [2],
     tag: "팬서비스",
     title: "어린이 팬의 편지",
-    body: "투병 중인 어린 팬이 편지를 보냈습니다. \"다음 경기에서 홈런(삼진) 하나만요.\"",
+    body: "투병 중인 어린 팬이 편지를 보냈습니다. \"다음 경기에서 멋진 모습 보여주세요.\"",
     choices: [
       sure("병원을 직접 찾아간다", "명성·멘탈 상승 · 체력 소모", "안정", {
         fame: 10,
@@ -863,6 +871,7 @@ const BASE_EVENTS: GameEvent[] = [
   },
   {
     id: "off-surgery",
+    duringRehab: true,
     phases: [4],
     tag: "의료진 소견",
     title: "수술 권유",
@@ -965,8 +974,8 @@ const BASE_EVENTS: GameEvent[] = [
     id: "off-salary",
     phases: [4],
     tag: "연봉 협상",
-    title: "연봉 협상 테이블",
-    body: "구단이 제시한 숫자는 당신의 기대보다 낮습니다. 서명하지 않으면 캠프에 늦을 수도 있습니다.",
+    title: "성과 보상 협의",
+    body: "구단이 제시한 성과 보상금은 기대보다 적습니다. 현재 계약과 별도로 지급하는 보상을 의논합니다.",
     when: (s) => s.contract.left >= 2 && s.seasons.length >= 1 && lastWar(s) >= 1.5,
     choices: [
       {
@@ -974,11 +983,11 @@ const BASE_EVENTS: GameEvent[] = [
         hint: "수입 상승 또는 신뢰 하락",
         risk: "도전",
         outcomes: [
-          { weight: 2, effect: { money: 2, fame: 4, text: "구단이 결국 물러섰습니다. 인상된 계약서에 서명했습니다.", tone: "good" } },
-          { weight: 1, effect: { teamTrust: -14, morale: -6, money: 0.5, text: "캠프 첫 주를 놓쳤습니다. 구단은 원래 숫자에서 거의 움직이지 않았습니다.", tone: "bad" } },
+          { weight: 2, effect: { money: 2, fame: 4, text: "성과 자료를 제시해 추가 보상금을 받았습니다.", tone: "good" } },
+          { weight: 1, effect: { teamTrust: -14, morale: -6, money: 0.5, text: "보상금은 조금 늘었지만 협의 과정에서 구단과 관계가 상했습니다.", tone: "bad" } },
         ],
       },
-      sure("제시안에 서명한다", "팀 신뢰 상승", "안정", {
+      sure("제시된 보상금을 받는다", "팀 신뢰 상승", "안정", {
         teamTrust: 10,
         money: 0.5,
         text: "\"돈보다 야구.\" 구단이 이 말을 기억할 겁니다.",
@@ -990,30 +999,33 @@ const BASE_EVENTS: GameEvent[] = [
     id: "off-military",
     phases: [4],
     tag: "병역",
-    title: "병역 문제",
-    body: "더 이상 미룰 수 없습니다. 커리어의 한가운데에 2년의 공백이 놓입니다.",
-    when: (s) => s.age >= 26 && s.age <= 29 && !s.traits.includes("병역해결") && inKorea(s),
+    title: "병역과 커리어 계획",
+    body: "구단 담당자와 병역 이행 계획을 상담합니다. 지원 준비와 훈련 일정을 함께 살펴볼 때입니다.",
+    once: true,
+    duringRehab: true,
+    when: (s) => s.age >= 26 && s.age <= 29 && !s.traits.includes("병역해결") && !s.traits.includes("병역 계획 수립") && inKorea(s),
     choices: [
-      sure("상무(국군체육부대)에 지원한다", "야구는 계속 · 연봉 없음", "안정", {
-        trait: "병역해결",
+      sure("체육부대 지원을 준비한다", "지원 준비 · 비용과 훈련", "안정", {
+        trait: "병역 계획 수립",
         money: -0.5,
         attrs: { mental: 3, durability: 2 },
         fame: -6,
-        text: "유니폼만 바뀌었습니다. 실전 감각은 유지됩니다.",
+        text: "담당자와 준비 일정을 정리했습니다. 지원 준비와 체력 훈련을 병행합니다.",
         tone: "neutral",
       }),
-      sure("현역으로 다녀온다", "능력치 하락 · 확실한 해결", "도전", {
-        trait: "병역해결",
+      sure("개인 훈련을 줄이고 상담에 집중한다", "훈련 감각 하락 · 체력 회복", "도전", {
+        trait: "병역 계획 수립",
         attrs: { contact: -3, power: -2, velocity: -3, control: -2 },
         health: 14,
         fame: -12,
-        text: "2년을 비웠습니다. 감각은 잃었지만 마음의 짐은 내려놨습니다.",
+        text: "훈련 시간을 덜어 계획을 세웠습니다. 감각은 다소 떨어졌지만 준비할 일이 분명해졌습니다.",
         tone: "neutral",
       }),
     ],
   },
   {
     id: "off-retire-thought",
+    duringRehab: true,
     phases: [4],
     tag: "갈림길",
     title: "은퇴를 생각하다",
@@ -1037,6 +1049,7 @@ const BASE_EVENTS: GameEvent[] = [
   },
   {
     id: "off-charity",
+    duringRehab: true,
     phases: [4],
     tag: "사회공헌",
     title: "기부 제안",
@@ -1107,6 +1120,9 @@ export function eventFits(e: GameEvent, s: PlayerState, phase: number, usedIds: 
   if (!e.phases.includes(phase as never)) return false;
   if (usedIds.includes(e.id)) return false;
   if (!fitsPosition(e, s)) return false;
+  if (e.roles && !e.roles.includes(roleFor(s))) return false;
+  if (e.minAge !== undefined && s.age < e.minAge) return false;
+  if (s.injury && s.injury.severity >= 0.5 && !e.duringRehab) return false;
   if (e.leagues && !e.leagues.includes(s.contract.league)) return false;
   if (e.teams && !e.teams.includes(stripFarm(s.contract.team))) return false;
   // 결산 뒤에도 같은 연도의 오프시즌은 같은 연차입니다.
@@ -1132,7 +1148,7 @@ export function drawEvent(
   recentIds: string[] = [],
   seenIds: string[] = [],
 ): GameEvent | null {
-  const base = EVENTS.filter((e) => eventFits(e, s, phase, usedIds));
+  const base = EVENTS.filter((e) => eventFits(e, s, phase, usedIds) && !(e.once && seenIds.includes(e.id)));
   if (!base.length) return null;
   const fresh = base.filter((e) => !recentIds.includes(e.id));
   const pool = fresh.length ? fresh : base;

@@ -18,7 +18,7 @@ import {
   type Impact,
   type SeasonResult,
 } from "./engine";
-import { EVENTS, drawEvent, rollOutcome } from "./events";
+import { EVENTS, drawEvent, eventFits, rollOutcome } from "./events";
 import type {
   AttrKey,
   Attrs,
@@ -484,13 +484,14 @@ export function reducer(s: GameState, action: Action): GameState {
 /* ─────────────────── 저장 / 불러오기 ─────────────────── */
 
 const KEY = "kbo-career-save-v2";
+const EVENT_REVISION = 2;
 
 export function saveGame(s: GameState) {
   if (s.screen === "setup") return;
   try {
     localStorage.setItem(
       KEY,
-      JSON.stringify({ ...s, event: s.event ? { id: s.event.id, title: s.event.title, body: s.event.body } : null, impacts: [], roleShift: null }),
+      JSON.stringify({ ...s, eventRevision: EVENT_REVISION, event: s.event ? { id: s.event.id, title: s.event.title, body: s.event.body } : null, impacts: [], roleShift: null }),
     );
   } catch {
     /* 저장 실패는 무시 */
@@ -501,14 +502,19 @@ export function loadGame(): GameState | null {
   try {
     const raw = localStorage.getItem(KEY);
     if (!raw) return null;
-    const parsed = JSON.parse(raw) as GameState;
+    const parsed = JSON.parse(raw) as GameState & { eventRevision?: number };
     if (!parsed?.player?.attrs) return null;
     const eventTemplate = parsed.event && EVENTS.find((e) => e.id === parsed.event?.id);
+    const valid = eventTemplate && eventFits(eventTemplate, parsed.player, parsed.player.phase, []);
+    const currentRevision = parsed.eventRevision === EVENT_REVISION;
+    const restoredEvent = valid
+      ? { ...eventTemplate, ...(currentRevision ? { title: parsed.event!.title ?? eventTemplate.title, body: parsed.event!.body ?? eventTemplate.body } : {}) }
+      : parsed.event ? drawEvent(parsed.player, parsed.player.phase, parsed.usedEvents ?? [], [], parsed.seenEvents ?? []) : null;
     return {
       ...parsed,
       eventHistory: parsed.eventHistory ?? [],
       seenEvents: parsed.seenEvents ?? [],
-      event: eventTemplate ? { ...eventTemplate, title: parsed.event!.title ?? eventTemplate.title, body: parsed.event!.body ?? eventTemplate.body } : null,
+      event: restoredEvent,
       result: parsed.result ?? null,
       deltas: [],
       impacts: [],

@@ -28,6 +28,7 @@ assert.ok(eventFits(veteran, { ...pitcher, year: 2035, seasons: records }, 0, []
 for (const e of EVENTS.filter(e => e.id.startsWith('club-'))) {
   const p = createPlayer('검증', e.positions[0]);
   p.contract.team = e.teams[0];
+  p.contract.league = e.leagues[0];
   p.year = 2026 + (e.minSeason - 1);
   p.seasons = Array.from({ length: e.minSeason - 1 }, (_, i) => ({ year: 2026 + i }));
   assert.ok(eventFits(e, p, e.phases[0], []), `${e.id}: must be reachable`);

@@ -1,13 +1,13 @@
-import { useState } from "react";
+import { useState, type CSSProperties } from "react";
 import { KOREAN_NAMES, POSITIONS } from "../game/data";
 import { pick } from "../game/engine";
 import { SPEED_LABEL } from "../game/store";
 import type { Position, Speed } from "../game/types";
 
 const SPEED_HELP: Record<Speed, string> = {
-  normal: "시즌마다 캠프 · 전반기 · 데드라인 이벤트를 전부 직접 고릅니다. 이야기를 꼼꼼히 즐기고 싶다면.",
+  normal: "캠프 · 전반기 · 후반기 · 오프시즌을 직접 선택합니다. 이야기를 꼼꼼히 즐기는 속도입니다.",
   fast: "전반기 이벤트는 자동으로 넘어갑니다. 한 시즌이 한 템포 빨라집니다.",
-  turbo: "스프링캠프 훈련 방침만 고르고 나머지는 자동. 커리어 전체를 빠르게 훑고 싶다면.",
+  turbo: "캠프와 오프시즌을 직접 고르고 전반기·후반기는 자동 처리합니다. 커리어를 빠르게 훑는 속도입니다.",
 };
 
 export function Setup({
@@ -25,12 +25,12 @@ export function Setup({
 
   return (
     <main className="setup">
-      <section className="setup-copy">
+      <section className="setup-copy" style={{ "--setup-art": `url('${import.meta.env.BASE_URL}moments/overseas.webp')` } as CSSProperties}>
         <div className="eyebrow">Baseball Career Simulator · 2026</div>
         <h1>
-          선택하지 마세요.
+          당신의 이름으로,
           <br />
-          <em>운명이 지명합니다.</em>
+          <em>야구 인생을 쓰다.</em>
         </h1>
         <p>
           드래프트, 국제계약, 육성선수, 혹은 기적 같은 즉시 데뷔. 시작점은 무작위지만
@@ -47,6 +47,7 @@ export function Setup({
       </section>
 
       <section className="creator">
+        {hasSave && <div className="continue-panel"><span className="eyebrow">WELCOME BACK</span><h2>다음 시즌이 기다립니다</h2><button className="btn primary block" onClick={onContinue}>저장된 커리어 이어하기</button><p className="tiny">이 브라우저에 저장된 선수로 계속합니다.</p></div>}
         <div className="step">
           <i>01</i>
           <div>
@@ -106,20 +107,12 @@ export function Setup({
         <div className="lottery">
           <small>SCOUTING LOTTERY</small>
           <b>시작 구단 · 리그 · 계약이 무작위로 결정됩니다</b>
-          <span>
-            잠재력 등급도 이때 숨겨진 채 정해집니다. 어떤 몸을 타고났는지는 몇 시즌
-            뒤에야 알게 됩니다.
-          </span>
+          <span>잠재력도 함께 정해집니다. 선수 화면에서 등급을 확인하고 나만의 성장 방향을 선택하세요.</span>
         </div>
 
         <button className="btn primary block" onClick={() => onStart(name, position, speed)}>
           운명적인 첫 오퍼 열기 →
         </button>
-        {hasSave && (
-          <button className="btn ghost block" onClick={onContinue}>
-            저장된 커리어 이어하기
-          </button>
-        )}
         <p className="tiny">진행 상황은 브라우저에 자동 저장됩니다</p>
       </section>
     </main>
